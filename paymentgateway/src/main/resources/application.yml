@@ -1,0 +1,19 @@
+server:
+  port: 5002
+
+logging:
+  file:
+    name: logs/app.log
+
+spring:
+  application:
+    name: payment-gateway-command
+  data:
+    mongodb:
+      uri: mongodb://root:example@localhost:27017/bankAccount?authSource=admin
+
+  kafka:
+    producer:
+      bootstrap-servers: localhost:9092
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
