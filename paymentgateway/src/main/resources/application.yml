@@ -1,5 +1,5 @@
 server:
-  port: 5002
+  port: 5001
 
 logging:
   file:
@@ -7,7 +7,7 @@ logging:
 
 spring:
   application:
-    name: payment-gateway-command
+    name: payment-gateway
   data:
     mongodb:
       uri: mongodb://root:example@localhost:27017/bankAccount?authSource=admin

@@ -43,3 +43,6 @@ mongodb_data
 kafka_data
 zookeeper_data
 logs
+
+.idea/
+.idea/vcs.xml
