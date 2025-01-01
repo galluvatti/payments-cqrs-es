@@ -3,8 +3,10 @@ package com.mypay.paymentgateway.domain.aggregates.payment
 import com.github.michaelbull.result.*
 import com.mypay.cqrs.core.aggregates.AggregateID
 import com.mypay.cqrs.core.aggregates.AggregateRoot
-import com.mypay.paymentgateway.domain.aggregates.payment.events.AuthorizedPaymentEvent
-import com.mypay.paymentgateway.domain.aggregates.payment.events.CapturedPaymentEvent
+import com.mypay.paymentgateway.domain.aggregates.payment.events.AuthorizationFailedEvent
+import com.mypay.paymentgateway.domain.aggregates.payment.events.AuthorizedEvent
+import com.mypay.paymentgateway.domain.aggregates.payment.events.CaptureFailedEvent
+import com.mypay.paymentgateway.domain.aggregates.payment.events.CapturedEvent
 import com.mypay.paymentgateway.domain.errors.PaymentAlreadyAuthorized
 import com.mypay.paymentgateway.domain.errors.PaymentGatewayError
 import com.mypay.paymentgateway.domain.ports.driven.PaymentProcessor
@@ -35,7 +37,7 @@ class Payment(id: AggregateID, private val paymentProcessor: PaymentProcessor) :
         )
             .onSuccess {
                 raiseEvent(
-                    AuthorizedPaymentEvent(
+                    AuthorizedEvent(
                         this.id,
                         this.version,
                         command.authorizationAmount,
@@ -47,14 +49,24 @@ class Payment(id: AggregateID, private val paymentProcessor: PaymentProcessor) :
                 )
             }
             .onFailure {
-                //TODO Raise events
-                    err ->
-                logger.error("Failed authorization for Payment with details $command. Reason: $err")
+                logger.error("Failed authorization for Payment with details $command. Reason: $it")
+                raiseEvent(
+                    AuthorizationFailedEvent(
+                        this.id,
+                        this.version,
+                        command.authorizationAmount,
+                        command.cardHolder,
+                        command.creditCard,
+                        command.order,
+                        it.description
+                    )
+                )
+
             }
 
         return pspResponse.mapBoth(
-            { _ -> Ok(Unit) },
-            { err -> Err(err) }
+            { Ok(Unit) },
+            { Err(it) }
         )
     }
 
@@ -62,7 +74,7 @@ class Payment(id: AggregateID, private val paymentProcessor: PaymentProcessor) :
         val pspResponse = paymentProcessor.capture(command.captureAmount)
             .onSuccess {
                 raiseEvent(
-                    CapturedPaymentEvent(
+                    CapturedEvent(
                         this.id,
                         this.version,
                         command.captureAmount,
@@ -71,27 +83,39 @@ class Payment(id: AggregateID, private val paymentProcessor: PaymentProcessor) :
                 )
             }
             .onFailure {
-                //TODO Raise event
-                    err ->
-                logger.error("Failed capture for Payment with details $command. Reason: $err")
+                logger.error("Failed capture for Payment with details $command. Reason: $it")
+                raiseEvent(
+                    CaptureFailedEvent(
+                        this.id,
+                        this.version,
+                        command.captureAmount,
+                        it.description
+                    )
+                )
             }
 
         return pspResponse.mapBoth(
-            { _ -> Ok(Unit) },
-            { err -> Err(err) }
+            { Ok(Unit) },
+            { Err(it) }
         )
     }
 
-    private fun apply(event: AuthorizedPaymentEvent) {
+    private fun apply(event: AuthorizedEvent) {
         this.isAuthorized = true
         this.authID = event.authID
         this.authorizedAmount = event.authorizationAmount
     }
 
-    private fun apply(event: CapturedPaymentEvent) {
+    private fun apply(event: AuthorizationFailedEvent) {
+    }
+
+    private fun apply(event: CapturedEvent) {
         this.isCaptured = true
         this.captureID = event.captureID
-        this.capturedAmount = event.capturedAmount
+        this.capturedAmount = event.captureAmount
+    }
+
+    private fun apply(event: CaptureFailedEvent) {
     }
 
     fun isAuthorized(): Boolean {

@@ -9,8 +9,10 @@ import com.mypay.paymentgateway.domain.valueobjects.creditcard.CardHolder
 import com.mypay.paymentgateway.domain.valueobjects.creditcard.CreditCard
 import com.mypay.paymentgateway.domain.valueobjects.psp.AuthID
 import com.mypay.paymentgateway.domain.valueobjects.psp.CaptureID
+import org.springframework.stereotype.Service
 import java.util.*
 
+@Service
 class AlwaysOKPaymentProcessor : PaymentProcessor {
     override fun authorize(
         authorizationAmount: Money,

@@ -33,6 +33,9 @@ abstract class AggregateRoot(
         }
     }
 
+    fun getUncommitedChanges(): List<DomainEvent> {
+        return this.uncommittedChanges
+    }
     fun markChangesAsCommitted() {
         uncommittedChanges.clear()
     }

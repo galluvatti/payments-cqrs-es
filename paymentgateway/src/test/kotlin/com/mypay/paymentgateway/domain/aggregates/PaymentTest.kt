@@ -5,7 +5,10 @@ import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.getError
 import com.mypay.cqrs.core.aggregates.AggregateID
 import com.mypay.paymentgateway.domain.aggregates.payment.Payment
-import com.mypay.paymentgateway.domain.aggregates.payment.events.AuthorizedPaymentEvent
+import com.mypay.paymentgateway.domain.aggregates.payment.events.AuthorizationFailedEvent
+import com.mypay.paymentgateway.domain.aggregates.payment.events.AuthorizedEvent
+import com.mypay.paymentgateway.domain.aggregates.payment.events.CaptureFailedEvent
+import com.mypay.paymentgateway.domain.aggregates.payment.events.CapturedEvent
 import com.mypay.paymentgateway.domain.errors.InsufficientFunds
 import com.mypay.paymentgateway.domain.errors.PaymentAlreadyAuthorized
 import com.mypay.paymentgateway.domain.ports.driven.PaymentProcessor
@@ -71,6 +74,8 @@ class PaymentTest {
         assertThat(payment.isAuthorized()).isTrue()
         assertThat(payment.getAuthorizedAmount()).isEqualTo(authorizationAmount)
         assertThat(payment.version).isEqualTo(1)
+        assertThat(payment.getUncommitedChanges())
+            .hasOnlyElementsOfType(AuthorizedEvent::class.java).hasSize(1)
     }
 
     @Test
@@ -80,6 +85,7 @@ class PaymentTest {
         every { paymentProcessor.authorize(authorizationAmount, cardHolder, creditCard) } returns Err(pspResponse)
 
         val payment = Payment(aggregateID, paymentProcessor)
+        val initialVersion = payment.version
         val authorizationResult = payment.authorize(
             AuthorizeCommand(
                 aggregateID,
@@ -93,7 +99,9 @@ class PaymentTest {
         assertThat(authorizationResult.isErr).isTrue()
         assertThat(authorizationResult.getError()).isEqualTo(pspResponse)
         assertThat(payment.isAuthorized()).isFalse()
-        assertThat(payment.version).isEqualTo(0)
+        assertThat(payment.version).isEqualTo(initialVersion+1)
+        assertThat(payment.getUncommitedChanges())
+            .hasOnlyElementsOfType(AuthorizationFailedEvent::class.java).hasSize(1)
     }
 
     @Test
@@ -101,6 +109,7 @@ class PaymentTest {
         val aggregateID = AggregateID(UUID.randomUUID())
 
         val payment = aPaymentAuthorized(aggregateID)
+        val initialVersion = payment.version
 
         val authorizationResult = payment.authorize(
             AuthorizeCommand(
@@ -113,7 +122,9 @@ class PaymentTest {
         )
 
         assertThat(authorizationResult.isErr).isTrue()
+        assertThat(payment.version).isEqualTo(initialVersion)
         assertThat(authorizationResult.getError()).isEqualTo(PaymentAlreadyAuthorized)
+        assertThat(payment.getUncommitedChanges()).hasSize(0)
     }
 
     @Test
@@ -121,6 +132,7 @@ class PaymentTest {
         val aggregateID = AggregateID(UUID.randomUUID())
 
         val payment = aPaymentAuthorized(aggregateID)
+        val initialVersion = payment.version
         every { paymentProcessor.capture(any()) } returns Ok(CaptureID("captureID"))
 
         val captureResult = payment.capture(
@@ -133,6 +145,32 @@ class PaymentTest {
         assertThat(captureResult.isOk).isTrue()
         assertThat(payment.isCaptured()).isTrue()
         assertThat(payment.getCapturedAmount()).isEqualTo(captureAmount)
+        assertThat(payment.version).isEqualTo(initialVersion+1)
+        assertThat(payment.getUncommitedChanges())
+            .hasOnlyElementsOfType(CapturedEvent::class.java).hasSize(1)
+        verify { paymentProcessor.capture(captureAmount) }
+    }
+
+    @Test
+    fun `should raise an event when capture fail`() {
+        val aggregateID = AggregateID(UUID.randomUUID())
+
+        val payment = aPaymentAuthorized(aggregateID)
+        val initialVersion = payment.version
+        every { paymentProcessor.capture(any()) } returns Err(InsufficientFunds)
+
+        val captureResult = payment.capture(
+            CaptureCommand(
+                aggregateID,
+                captureAmount,
+            )
+        )
+
+        assertThat(captureResult.isErr).isTrue()
+        assertThat(payment.isCaptured()).isFalse()
+        assertThat(payment.version).isEqualTo(initialVersion+1)
+        assertThat(payment.getUncommitedChanges())
+            .hasOnlyElementsOfType(CaptureFailedEvent::class.java).hasSize(1)
         verify { paymentProcessor.capture(captureAmount) }
     }
 
@@ -141,7 +179,7 @@ class PaymentTest {
         val payment = Payment(aggregateID, paymentProcessor)
         payment.replayEvents(
             listOf(
-                AuthorizedPaymentEvent(
+                AuthorizedEvent(
                     aggregateID,
                     1,
                     authorizationAmount,
