@@ -8,8 +8,7 @@ import com.mypay.paymentgateway.domain.aggregates.payment.events.AuthorizedEvent
 import com.mypay.paymentgateway.domain.aggregates.payment.events.CaptureFailedEvent
 import com.mypay.paymentgateway.domain.aggregates.payment.events.CapturedEvent
 import com.mypay.paymentgateway.domain.errors.PaymentAlreadyAuthorized
-import com.mypay.paymentgateway.domain.errors.PaymentGatewayError
-import com.mypay.paymentgateway.domain.ports.driven.PaymentProcessor
+import com.mypay.paymentgateway.domain.errors.DomainError
 import com.mypay.paymentgateway.domain.ports.driver.AuthorizeCommand
 import com.mypay.paymentgateway.domain.ports.driver.CaptureCommand
 import com.mypay.paymentgateway.domain.valueobjects.Money
@@ -17,7 +16,7 @@ import com.mypay.paymentgateway.domain.valueobjects.psp.AuthID
 import com.mypay.paymentgateway.domain.valueobjects.psp.CaptureID
 import org.slf4j.LoggerFactory
 
-class Payment(id: AggregateID, private val paymentProcessor: PaymentProcessor) : AggregateRoot(id) {
+class Payment(id: AggregateID) : AggregateRoot(id) {
     private val logger = LoggerFactory.getLogger(Payment::class.java)
     private var isAuthorized = false
 
@@ -27,10 +26,10 @@ class Payment(id: AggregateID, private val paymentProcessor: PaymentProcessor) :
     private lateinit var capturedAmount: Money
     private lateinit var captureID: CaptureID
 
-    fun authorize(command: AuthorizeCommand): Result<Unit, PaymentGatewayError> {
+    fun authorize(command: AuthorizeCommand): Result<Unit, DomainError> {
         if (isAuthorized) return Err(PaymentAlreadyAuthorized)
 
-        val pspResponse = paymentProcessor.authorize(
+        val pspResponse = command.paymentProcessor.authorize(
             command.authorizationAmount,
             command.cardHolder,
             command.creditCard
@@ -70,14 +69,14 @@ class Payment(id: AggregateID, private val paymentProcessor: PaymentProcessor) :
         )
     }
 
-    fun capture(command: CaptureCommand): Result<Unit, PaymentGatewayError> {
-        val pspResponse = paymentProcessor.capture(command.captureAmount)
+    fun capture(command: CaptureCommand): Result<Unit, DomainError> {
+        val pspResponse = command.paymentProcessor.capture(command.captureAmount)
             .onSuccess {
                 raiseEvent(
                     CapturedEvent(
                         this.id,
                         this.version,
-                        command.captureAmount,
+                        Money(this.authorizedAmount.currency, command.captureAmount),
                         it
                     )
                 )
@@ -88,7 +87,7 @@ class Payment(id: AggregateID, private val paymentProcessor: PaymentProcessor) :
                     CaptureFailedEvent(
                         this.id,
                         this.version,
-                        command.captureAmount,
+                        Money(this.authorizedAmount.currency, command.captureAmount),
                         it.description
                     )
                 )

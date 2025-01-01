@@ -7,7 +7,7 @@ import com.github.michaelbull.result.mapBoth
 import com.mypay.cqrs.core.commands.CommandHandler
 import com.mypay.cqrs.core.handlers.EventSourcingHandler
 import com.mypay.paymentgateway.domain.aggregates.payment.Payment
-import com.mypay.paymentgateway.domain.errors.PaymentGatewayError
+import com.mypay.paymentgateway.domain.errors.DomainError
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 
@@ -17,7 +17,7 @@ class CaptureCommandHandler(
     private val eventSourcingHandler: EventSourcingHandler<Payment>
 ) : CommandHandler<CaptureCommand> {
 
-    override fun handle(command: CaptureCommand): Result<Unit, PaymentGatewayError> {
+    override fun handle(command: CaptureCommand): Result<Unit, DomainError> {
         val aggregate = eventSourcingHandler.getById(command.aggregateID)
         val result = aggregate.capture(command)
         eventSourcingHandler.save(aggregate)

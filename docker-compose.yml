@@ -42,8 +42,8 @@ services:
     volumes:
       - "./mysql_data:/var/lib/mysql"
     environment:
-      MYSQL_ROOT_PASSWORD: techBankRootPsw
-      MYSQL_DATABASE: bankAccount
+      MYSQL_ROOT_PASSWORD: techPaymentsRootPsw
+      MYSQL_DATABASE: payments
       MYSQL_USER: test
       MYSQL_PASSWORD: test
 

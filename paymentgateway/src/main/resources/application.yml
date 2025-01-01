@@ -10,7 +10,7 @@ spring:
     name: payment-gateway
   data:
     mongodb:
-      uri: mongodb://root:example@localhost:27017/bankAccount?authSource=admin
+      uri: mongodb://root:example@localhost:27017/payments?authSource=admin
 
   kafka:
     producer:

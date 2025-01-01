@@ -1,7 +1,7 @@
 package com.mypay.paymentgateway.domain.ports.driven
 
 import com.github.michaelbull.result.Result
-import com.mypay.paymentgateway.domain.errors.PaymentGatewayError
+import com.mypay.paymentgateway.domain.errors.DomainError
 import com.mypay.paymentgateway.domain.valueobjects.Money
 import com.mypay.paymentgateway.domain.valueobjects.creditcard.CardHolder
 import com.mypay.paymentgateway.domain.valueobjects.creditcard.CreditCard
@@ -13,7 +13,7 @@ interface PaymentProcessor {
         authorizationAmount: Money,
         cardHolder: CardHolder,
         creditCard: CreditCard
-    ): Result<AuthID, PaymentGatewayError>
+    ): Result<AuthID, DomainError>
 
-    fun capture(captureAmount: Money): Result<CaptureID, PaymentGatewayError>
+    fun capture(captureAmount: Double): Result<CaptureID, DomainError>
 }

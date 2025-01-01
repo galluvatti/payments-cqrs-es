@@ -38,10 +38,10 @@ import java.util.*
 class PaymentTest {
 
     private val authorizationAmount = Money(Currency.getInstance("EUR"), 100.0)
-    private val captureAmount = Money(Currency.getInstance("EUR"), 50.0)
+    private val captureAmount = 50.0
     private val cardHolder = CardHolder(
         AnagraphicDetails("John", "Doe"),
-        BillingDetails(Country("IT"), City("Milan"), Address("Via di Casa Mia", "44")),
+        BillingDetails(Country("IT"), City("Milan"), Address("Via di Casa Mia")),
         Email("itsme@mail.com")
     )
     private val creditCard =
@@ -59,14 +59,15 @@ class PaymentTest {
         val aggregateID = AggregateID(UUID.randomUUID())
         every { paymentProcessor.authorize(authorizationAmount, cardHolder, creditCard) } returns Ok(AuthID("authID"))
 
-        val payment = Payment(aggregateID, paymentProcessor)
+        val payment = Payment(aggregateID)
         val authorizationResult = payment.authorize(
             AuthorizeCommand(
                 aggregateID,
                 authorizationAmount,
                 cardHolder,
                 creditCard,
-                order
+                order,
+                paymentProcessor
             )
         )
 
@@ -84,7 +85,7 @@ class PaymentTest {
         val pspResponse = InsufficientFunds
         every { paymentProcessor.authorize(authorizationAmount, cardHolder, creditCard) } returns Err(pspResponse)
 
-        val payment = Payment(aggregateID, paymentProcessor)
+        val payment = Payment(aggregateID)
         val initialVersion = payment.version
         val authorizationResult = payment.authorize(
             AuthorizeCommand(
@@ -92,14 +93,15 @@ class PaymentTest {
                 authorizationAmount,
                 cardHolder,
                 creditCard,
-                order
+                order,
+                paymentProcessor
             )
         )
 
         assertThat(authorizationResult.isErr).isTrue()
         assertThat(authorizationResult.getError()).isEqualTo(pspResponse)
         assertThat(payment.isAuthorized()).isFalse()
-        assertThat(payment.version).isEqualTo(initialVersion+1)
+        assertThat(payment.version).isEqualTo(initialVersion + 1)
         assertThat(payment.getUncommitedChanges())
             .hasOnlyElementsOfType(AuthorizationFailedEvent::class.java).hasSize(1)
     }
@@ -117,7 +119,8 @@ class PaymentTest {
                 authorizationAmount,
                 cardHolder,
                 creditCard,
-                order
+                order,
+                paymentProcessor
             )
         )
 
@@ -139,13 +142,14 @@ class PaymentTest {
             CaptureCommand(
                 aggregateID,
                 captureAmount,
+                paymentProcessor
             )
         )
 
         assertThat(captureResult.isOk).isTrue()
         assertThat(payment.isCaptured()).isTrue()
         assertThat(payment.getCapturedAmount()).isEqualTo(captureAmount)
-        assertThat(payment.version).isEqualTo(initialVersion+1)
+        assertThat(payment.version).isEqualTo(initialVersion + 1)
         assertThat(payment.getUncommitedChanges())
             .hasOnlyElementsOfType(CapturedEvent::class.java).hasSize(1)
         verify { paymentProcessor.capture(captureAmount) }
@@ -163,12 +167,13 @@ class PaymentTest {
             CaptureCommand(
                 aggregateID,
                 captureAmount,
+                paymentProcessor
             )
         )
 
         assertThat(captureResult.isErr).isTrue()
         assertThat(payment.isCaptured()).isFalse()
-        assertThat(payment.version).isEqualTo(initialVersion+1)
+        assertThat(payment.version).isEqualTo(initialVersion + 1)
         assertThat(payment.getUncommitedChanges())
             .hasOnlyElementsOfType(CaptureFailedEvent::class.java).hasSize(1)
         verify { paymentProcessor.capture(captureAmount) }
@@ -176,7 +181,7 @@ class PaymentTest {
 
 
     private fun aPaymentAuthorized(aggregateID: AggregateID): Payment {
-        val payment = Payment(aggregateID, paymentProcessor)
+        val payment = Payment(aggregateID)
         payment.replayEvents(
             listOf(
                 AuthorizedEvent(

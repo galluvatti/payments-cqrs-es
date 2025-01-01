@@ -2,6 +2,7 @@ package com.mypay.paymentgateway.domain.ports.driver
 
 import com.mypay.cqrs.core.aggregates.AggregateID
 import com.mypay.cqrs.core.commands.Command
+import com.mypay.paymentgateway.domain.ports.driven.PaymentProcessor
 import com.mypay.paymentgateway.domain.valueobjects.Money
 import com.mypay.paymentgateway.domain.valueobjects.Order
 import com.mypay.paymentgateway.domain.valueobjects.creditcard.CardHolder
@@ -12,5 +13,6 @@ data class AuthorizeCommand(
     val authorizationAmount: Money,
     val cardHolder: CardHolder,
     val creditCard: CreditCard,
-    val order: Order
+    val order: Order,
+    val paymentProcessor: PaymentProcessor
 ) : Command(aggregateID)

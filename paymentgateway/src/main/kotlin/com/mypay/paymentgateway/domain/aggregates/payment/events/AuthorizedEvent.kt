@@ -8,9 +8,9 @@ import com.mypay.paymentgateway.domain.valueobjects.creditcard.CardHolder
 import com.mypay.paymentgateway.domain.valueobjects.creditcard.CreditCard
 import com.mypay.paymentgateway.domain.valueobjects.psp.AuthID
 
-data class AuthorizedEvent(
-    val aggregateID: AggregateID,
-    val version: Int,
+class AuthorizedEvent(
+    aggregateID: AggregateID,
+    version: Int,
     val authorizationAmount: Money,
     val cardHolder: CardHolder,
     val creditCard: CreditCard,

@@ -4,7 +4,7 @@ import com.github.michaelbull.result.Result
 import com.mypay.cqrs.core.commands.Command
 import com.mypay.cqrs.core.commands.CommandHandler
 import com.mypay.cqrs.core.infrastructure.CommandDispatcher
-import com.mypay.paymentgateway.domain.errors.PaymentGatewayError
+import com.mypay.paymentgateway.domain.errors.DomainError
 import org.springframework.stereotype.Service
 
 @Service
@@ -15,7 +15,7 @@ class PaymentCommandDispatcher : CommandDispatcher {
 
     private val routes = HashMap<Class<out Command>, CommandHandler<out Command>>()
 
-    override fun send(command: Command): Result<Unit, PaymentGatewayError> {
+    override fun send(command: Command): Result<Unit, DomainError> {
         val handler = routes[command::class.java]
             ?: throw RuntimeException("No handler found for the command ${command::class.java}")
         return (handler as CommandHandler<Command>).handle(command);

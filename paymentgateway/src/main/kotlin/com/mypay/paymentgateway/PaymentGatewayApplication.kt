@@ -25,7 +25,7 @@ class PaymentGatewayApplication {
     @PostConstruct
     fun registerCommands() {
         commandDispacther.registerHandler(
-            AuthorizeCommand::class.java, AuthorizeCommandHandler(eventSourcingHandler, paymentProcessor))
+            AuthorizeCommand::class.java, AuthorizeCommandHandler(eventSourcingHandler))
         commandDispacther.registerHandler(
             CaptureCommand::class.java, CaptureCommandHandler(eventSourcingHandler))
     }

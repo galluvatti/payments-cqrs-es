@@ -5,9 +5,9 @@ import com.mypay.cqrs.core.events.DomainEvent
 import com.mypay.paymentgateway.domain.valueobjects.Money
 import com.mypay.paymentgateway.domain.valueobjects.psp.CaptureID
 
-data class CapturedEvent(
-    val aggregateID: AggregateID,
-    val version: Int,
+class CapturedEvent(
+    aggregateID: AggregateID,
+    version: Int,
     val captureAmount: Money,
     val captureID: CaptureID
 ) :

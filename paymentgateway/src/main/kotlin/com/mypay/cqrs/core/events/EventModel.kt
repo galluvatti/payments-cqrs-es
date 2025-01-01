@@ -7,7 +7,7 @@ import java.util.*
 @Document
 data class EventModel(
     @Id
-    val id: String,
+    val id: String? = null,
     val timestamp: Date,
     val aggregateId: String,
     var aggregateType: String,
