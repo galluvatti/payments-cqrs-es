@@ -16,4 +16,8 @@ class AuthorizationFailedEvent(
     val order: Order,
     val failureReason: String
 ) :
-    DomainEvent(aggregateID, version)
+    DomainEvent(aggregateID, version) {
+    override fun toString(): String {
+        return "AuthorizationFailedEvent(authorizationAmount=$authorizationAmount, cardHolder=$cardHolder, creditCard=$creditCard, order=$order, failureReason='$failureReason')"
+    }
+}

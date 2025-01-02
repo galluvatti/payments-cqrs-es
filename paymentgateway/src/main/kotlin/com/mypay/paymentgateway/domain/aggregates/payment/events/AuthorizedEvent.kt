@@ -17,4 +17,8 @@ class AuthorizedEvent(
     val order: Order,
     val authID: AuthID
 ) :
-    DomainEvent(aggregateID, version)
+    DomainEvent(aggregateID, version) {
+    override fun toString(): String {
+        return "AuthorizedEvent(authorizationAmount=$authorizationAmount, cardHolder=$cardHolder, creditCard=$creditCard, order=$order, authID=$authID)"
+    }
+}

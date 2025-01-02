@@ -74,19 +74,17 @@ class PaymentTest {
         assertThat(authorizationResult.isOk).isTrue()
         assertThat(payment.isAuthorized()).isTrue()
         assertThat(payment.getAuthorizedAmount()).isEqualTo(authorizationAmount)
-        assertThat(payment.version).isEqualTo(1)
         assertThat(payment.getUncommitedChanges())
             .hasOnlyElementsOfType(AuthorizedEvent::class.java).hasSize(1)
     }
 
     @Test
-    fun `should return an error when authorization fails`() {
+    fun `should raise an event when authorization fails`() {
         val aggregateID = AggregateID(UUID.randomUUID())
         val pspResponse = InsufficientFunds
         every { paymentProcessor.authorize(authorizationAmount, cardHolder, creditCard) } returns Err(pspResponse)
 
         val payment = Payment(aggregateID)
-        val initialVersion = payment.version
         val authorizationResult = payment.authorize(
             AuthorizeCommand(
                 aggregateID,
@@ -101,7 +99,6 @@ class PaymentTest {
         assertThat(authorizationResult.isErr).isTrue()
         assertThat(authorizationResult.getError()).isEqualTo(pspResponse)
         assertThat(payment.isAuthorized()).isFalse()
-        assertThat(payment.version).isEqualTo(initialVersion + 1)
         assertThat(payment.getUncommitedChanges())
             .hasOnlyElementsOfType(AuthorizationFailedEvent::class.java).hasSize(1)
     }
@@ -109,9 +106,7 @@ class PaymentTest {
     @Test
     fun `should not authorize a payment already authorized`() {
         val aggregateID = AggregateID(UUID.randomUUID())
-
         val payment = aPaymentAuthorized(aggregateID)
-        val initialVersion = payment.version
 
         val authorizationResult = payment.authorize(
             AuthorizeCommand(
@@ -125,7 +120,6 @@ class PaymentTest {
         )
 
         assertThat(authorizationResult.isErr).isTrue()
-        assertThat(payment.version).isEqualTo(initialVersion)
         assertThat(authorizationResult.getError()).isEqualTo(PaymentAlreadyAuthorized)
         assertThat(payment.getUncommitedChanges()).hasSize(0)
     }
@@ -133,11 +127,9 @@ class PaymentTest {
     @Test
     fun `should capture 50 EUR on a payment authorized for 100 EUR`() {
         val aggregateID = AggregateID(UUID.randomUUID())
-
-        val payment = aPaymentAuthorized(aggregateID)
-        val initialVersion = payment.version
         every { paymentProcessor.capture(any()) } returns Ok(CaptureID("captureID"))
 
+        val payment = aPaymentAuthorized(aggregateID)
         val captureResult = payment.capture(
             CaptureCommand(
                 aggregateID,
@@ -148,8 +140,7 @@ class PaymentTest {
 
         assertThat(captureResult.isOk).isTrue()
         assertThat(payment.isCaptured()).isTrue()
-        assertThat(payment.getCapturedAmount()).isEqualTo(captureAmount)
-        assertThat(payment.version).isEqualTo(initialVersion + 1)
+        assertThat(payment.getCapturedAmount()).isEqualTo(Money(payment.getAuthorizedAmount().currency, captureAmount))
         assertThat(payment.getUncommitedChanges())
             .hasOnlyElementsOfType(CapturedEvent::class.java).hasSize(1)
         verify { paymentProcessor.capture(captureAmount) }
@@ -158,10 +149,8 @@ class PaymentTest {
     @Test
     fun `should raise an event when capture fail`() {
         val aggregateID = AggregateID(UUID.randomUUID())
-
-        val payment = aPaymentAuthorized(aggregateID)
-        val initialVersion = payment.version
         every { paymentProcessor.capture(any()) } returns Err(InsufficientFunds)
+        val payment = aPaymentAuthorized(aggregateID)
 
         val captureResult = payment.capture(
             CaptureCommand(
@@ -173,10 +162,29 @@ class PaymentTest {
 
         assertThat(captureResult.isErr).isTrue()
         assertThat(payment.isCaptured()).isFalse()
-        assertThat(payment.version).isEqualTo(initialVersion + 1)
         assertThat(payment.getUncommitedChanges())
             .hasOnlyElementsOfType(CaptureFailedEvent::class.java).hasSize(1)
         verify { paymentProcessor.capture(captureAmount) }
+    }
+
+    @Test
+    fun `should increase version when changes are marked as committed`() {
+        val aggregateID = AggregateID(UUID.randomUUID())
+        every { paymentProcessor.capture(any()) } returns Ok(CaptureID("captureID"))
+
+        val payment = aPaymentAuthorized(aggregateID)
+        payment.capture(
+            CaptureCommand(
+                aggregateID,
+                captureAmount,
+                paymentProcessor
+            )
+        )
+
+        assertThat(payment.getUncommitedChanges()).hasSize(1)
+        val expectedVersion = payment.version
+        payment.markChangesAsCommitted()
+        assertThat(payment.version).isEqualTo(expectedVersion + 1)
     }
 
 

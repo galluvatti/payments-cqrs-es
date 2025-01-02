@@ -13,7 +13,6 @@ class AuthorizeCommandHandler(
     @Autowired private val eventSourcingHandler: EventSourcingHandler<Payment>
 ) : CommandHandler<AuthorizeCommand> {
 
-    //TODO Test
     override fun handle(command: AuthorizeCommand): Result<Unit, DomainError> {
         val aggregate = Payment(command.aggregateID)
         var result = aggregate.authorize(command)

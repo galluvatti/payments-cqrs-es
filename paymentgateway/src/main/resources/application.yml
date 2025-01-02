@@ -13,6 +13,7 @@ spring:
       uri: mongodb://root:example@localhost:27017/payments?authSource=admin
 
   kafka:
+    topic: PaymentEvents
     producer:
       bootstrap-servers: localhost:9092
       key-serializer: org.apache.kafka.common.serialization.StringSerializer

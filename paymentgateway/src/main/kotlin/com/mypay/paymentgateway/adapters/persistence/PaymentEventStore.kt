@@ -10,7 +10,7 @@ import com.mypay.cqrs.core.infrastructure.EventProducer
 import com.mypay.cqrs.core.infrastructure.EventStore
 import com.mypay.paymentgateway.domain.aggregates.payment.Payment
 import com.mypay.paymentgateway.domain.errors.DomainError
-import com.mypay.paymentgateway.domain.errors.OptimisticConcurrencyException
+import com.mypay.paymentgateway.domain.errors.OptimisticConcurrencyViolation
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Repository
@@ -30,12 +30,18 @@ class PaymentEventStore(
     ): Result<Unit, DomainError> {
         val eventStream = repository.findByAggregateId(aggregateID.value.toString())
         if (expectedVersion != -1 && eventStream[eventStream.size - 1].version != expectedVersion) {
-            return Err(OptimisticConcurrencyException)
+            val foundVersion = eventStream[eventStream.size - 1].version
+            logger.error(
+                "Optmistic concurrency error for aggregate with id $aggregateID, " +
+                        "expected version was $expectedVersion but found $foundVersion"
+            )
+            return Err(OptimisticConcurrencyViolation)
         }
         var version = expectedVersion
         events.forEach {
             version++
             it.version = version
+            logger.info("Persisting event $it")
             repository.save(
                 EventModel(
                     timestamp = Date(),

@@ -1,9 +1,6 @@
 package com.mypay.paymentgateway.domain.ports.driver
 
-import com.github.michaelbull.result.Err
-import com.github.michaelbull.result.Ok
-import com.github.michaelbull.result.Result
-import com.github.michaelbull.result.mapBoth
+import com.github.michaelbull.result.*
 import com.mypay.cqrs.core.commands.CommandHandler
 import com.mypay.cqrs.core.handlers.EventSourcingHandler
 import com.mypay.paymentgateway.domain.aggregates.payment.Payment
@@ -19,8 +16,9 @@ class CaptureCommandHandler(
 
     override fun handle(command: CaptureCommand): Result<Unit, DomainError> {
         val aggregate = eventSourcingHandler.getById(command.aggregateID)
-        val result = aggregate.capture(command)
+        var result = aggregate.capture(command)
         eventSourcingHandler.save(aggregate)
+            .onFailure { result = Err(it) }
         return result.mapBoth(
             { Ok(Unit) },
             { Err(it) }

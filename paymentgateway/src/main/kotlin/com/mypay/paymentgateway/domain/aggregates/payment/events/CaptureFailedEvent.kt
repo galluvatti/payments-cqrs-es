@@ -10,4 +10,8 @@ class CaptureFailedEvent(
     val captureAmount: Money,
     val failureReason: String
 ) :
-    DomainEvent(aggregateID, version)
+    DomainEvent(aggregateID, version) {
+    override fun toString(): String {
+        return "CaptureFailedEvent(captureAmount=$captureAmount, failureReason='$failureReason')"
+    }
+}

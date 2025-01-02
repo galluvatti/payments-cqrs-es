@@ -11,4 +11,8 @@ class CapturedEvent(
     val captureAmount: Money,
     val captureID: CaptureID
 ) :
-    DomainEvent(aggregateID, version)
+    DomainEvent(aggregateID, version) {
+    override fun toString(): String {
+        return "CapturedEvent(captureAmount=$captureAmount, captureID=$captureID)"
+    }
+}
