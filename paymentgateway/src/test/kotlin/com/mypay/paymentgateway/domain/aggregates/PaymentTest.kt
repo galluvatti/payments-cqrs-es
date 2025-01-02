@@ -127,7 +127,7 @@ class PaymentTest {
     @Test
     fun `should capture 50 EUR on a payment authorized for 100 EUR`() {
         val aggregateID = AggregateID(UUID.randomUUID())
-        every { paymentProcessor.capture(any()) } returns Ok(CaptureID("captureID"))
+        every { paymentProcessor.capture(AuthID("authID"), any()) } returns Ok(CaptureID("captureID"))
 
         val payment = aPaymentAuthorized(aggregateID)
         val captureResult = payment.capture(
@@ -143,13 +143,13 @@ class PaymentTest {
         assertThat(payment.getCapturedAmount()).isEqualTo(Money(payment.getAuthorizedAmount().currency, captureAmount))
         assertThat(payment.getUncommitedChanges())
             .hasOnlyElementsOfType(CapturedEvent::class.java).hasSize(1)
-        verify { paymentProcessor.capture(captureAmount) }
+        verify { paymentProcessor.capture(AuthID("authID"), captureAmount) }
     }
 
     @Test
     fun `should raise an event when capture fail`() {
         val aggregateID = AggregateID(UUID.randomUUID())
-        every { paymentProcessor.capture(any()) } returns Err(InsufficientFunds)
+        every { paymentProcessor.capture(AuthID("authID"), any()) } returns Err(InsufficientFunds)
         val payment = aPaymentAuthorized(aggregateID)
 
         val captureResult = payment.capture(
@@ -164,13 +164,13 @@ class PaymentTest {
         assertThat(payment.isCaptured()).isFalse()
         assertThat(payment.getUncommitedChanges())
             .hasOnlyElementsOfType(CaptureFailedEvent::class.java).hasSize(1)
-        verify { paymentProcessor.capture(captureAmount) }
+        verify { paymentProcessor.capture(AuthID("authID"), captureAmount) }
     }
 
     @Test
     fun `should increase version when changes are marked as committed`() {
         val aggregateID = AggregateID(UUID.randomUUID())
-        every { paymentProcessor.capture(any()) } returns Ok(CaptureID("captureID"))
+        every { paymentProcessor.capture(AuthID("authID"), any()) } returns Ok(CaptureID("captureID"))
 
         val payment = aPaymentAuthorized(aggregateID)
         payment.capture(

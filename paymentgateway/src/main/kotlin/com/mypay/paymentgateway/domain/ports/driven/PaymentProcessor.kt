@@ -15,5 +15,5 @@ interface PaymentProcessor {
         creditCard: CreditCard
     ): Result<AuthID, DomainError>
 
-    fun capture(captureAmount: Double): Result<CaptureID, DomainError>
+    fun capture(authorizationID: AuthID, captureAmount: Double): Result<CaptureID, DomainError>
 }

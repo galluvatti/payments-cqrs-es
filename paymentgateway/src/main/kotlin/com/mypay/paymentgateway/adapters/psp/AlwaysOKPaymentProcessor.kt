@@ -25,8 +25,7 @@ class AlwaysOKPaymentProcessor : PaymentProcessor {
         return Ok(AuthID(UUID.randomUUID().toString()))
     }
 
-    //FIXME Pass authID
-    override fun capture(captureAmount: Double): Result<CaptureID, DomainError> {
+    override fun capture(authorizationID: AuthID, captureAmount: Double): Result<CaptureID, DomainError> {
         logger.info("PSP is capturing payment")
         return Ok(CaptureID(UUID.randomUUID().toString()))
     }

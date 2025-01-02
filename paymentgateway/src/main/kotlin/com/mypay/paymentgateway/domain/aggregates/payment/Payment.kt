@@ -70,7 +70,7 @@ class Payment(id: AggregateID) : AggregateRoot(id) {
     }
 
     fun capture(command: CaptureCommand): Result<Unit, DomainError> {
-        val pspResponse = command.paymentProcessor.capture(command.captureAmount)
+        val pspResponse = command.paymentProcessor.capture(authID, command.captureAmount)
             .onSuccess {
                 raiseEvent(
                     CapturedEvent(
