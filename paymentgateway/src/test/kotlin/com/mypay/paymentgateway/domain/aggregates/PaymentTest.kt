@@ -9,6 +9,7 @@ import com.mypay.paymentgateway.domain.aggregates.payment.events.AuthorizationFa
 import com.mypay.paymentgateway.domain.aggregates.payment.events.AuthorizedEvent
 import com.mypay.paymentgateway.domain.aggregates.payment.events.CaptureFailedEvent
 import com.mypay.paymentgateway.domain.aggregates.payment.events.CapturedEvent
+import com.mypay.paymentgateway.domain.errors.CaptureNotAllowed
 import com.mypay.paymentgateway.domain.errors.InsufficientFunds
 import com.mypay.paymentgateway.domain.errors.PaymentAlreadyAuthorized
 import com.mypay.paymentgateway.domain.ports.driven.PaymentProcessor
@@ -144,6 +145,54 @@ class PaymentTest {
         assertThat(payment.getUncommitedChanges())
             .hasOnlyElementsOfType(CapturedEvent::class.java).hasSize(1)
         verify { paymentProcessor.capture(AuthID("authID"), captureAmount) }
+    }
+
+    @Test
+    fun `should do multiple captures on a payment authorized for 100 EUR`() {
+        val aggregateID = AggregateID(UUID.randomUUID())
+        every { paymentProcessor.capture(AuthID("authID"), any()) } returns Ok(CaptureID(UUID.randomUUID().toString()))
+
+        val payment = aPaymentAuthorized(aggregateID)
+        var captureResult = payment.capture(
+            CaptureCommand(
+                aggregateID,
+                captureAmount,
+                paymentProcessor
+            )
+        )
+        captureResult = payment.capture(
+            CaptureCommand(
+                aggregateID,
+                captureAmount,
+                paymentProcessor
+            )
+        )
+
+        assertThat(captureResult.isOk).isTrue()
+        assertThat(payment.isCaptured()).isTrue()
+        assertThat(payment.getCapturedAmount()).isEqualTo(Money(payment.getAuthorizedAmount().currency, captureAmount*2))
+        assertThat(payment.getUncommitedChanges())
+            .hasOnlyElementsOfType(CapturedEvent::class.java).hasSize(2)
+        verify { paymentProcessor.capture(AuthID("authID"), captureAmount) }
+    }
+
+    @Test
+    fun `should not capture when a payment is not previously authorized`() {
+        val aggregateID = AggregateID(UUID.randomUUID())
+
+        val payment = Payment(aggregateID)
+        val captureResult = payment.capture(
+            CaptureCommand(
+                aggregateID,
+                captureAmount,
+                paymentProcessor
+            )
+        )
+
+        assertThat(captureResult.isErr).isTrue()
+        assertThat(captureResult.error).isEqualTo(CaptureNotAllowed)
+        assertThat(payment.isCaptured()).isFalse()
+        assertThat(payment.getUncommitedChanges()).hasSize(0)
     }
 
     @Test

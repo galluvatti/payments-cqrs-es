@@ -7,8 +7,9 @@ import com.mypay.paymentgateway.domain.aggregates.payment.events.AuthorizationFa
 import com.mypay.paymentgateway.domain.aggregates.payment.events.AuthorizedEvent
 import com.mypay.paymentgateway.domain.aggregates.payment.events.CaptureFailedEvent
 import com.mypay.paymentgateway.domain.aggregates.payment.events.CapturedEvent
-import com.mypay.paymentgateway.domain.errors.PaymentAlreadyAuthorized
+import com.mypay.paymentgateway.domain.errors.CaptureNotAllowed
 import com.mypay.paymentgateway.domain.errors.DomainError
+import com.mypay.paymentgateway.domain.errors.PaymentAlreadyAuthorized
 import com.mypay.paymentgateway.domain.ports.driver.AuthorizeCommand
 import com.mypay.paymentgateway.domain.ports.driver.CaptureCommand
 import com.mypay.paymentgateway.domain.valueobjects.Money
@@ -24,7 +25,7 @@ class Payment(id: AggregateID) : AggregateRoot(id) {
     private lateinit var authorizedAmount: Money
     private lateinit var authID: AuthID
     private lateinit var capturedAmount: Money
-    private lateinit var captureID: CaptureID
+    private val captureIDs = mutableListOf<CaptureID>()
 
     fun authorize(command: AuthorizeCommand): Result<Unit, DomainError> {
         if (isAuthorized) return Err(PaymentAlreadyAuthorized)
@@ -70,6 +71,7 @@ class Payment(id: AggregateID) : AggregateRoot(id) {
     }
 
     fun capture(command: CaptureCommand): Result<Unit, DomainError> {
+        if (!isAuthorized) return Err(CaptureNotAllowed)
         val pspResponse = command.paymentProcessor.capture(authID, command.captureAmount)
             .onSuccess {
                 raiseEvent(
@@ -109,9 +111,14 @@ class Payment(id: AggregateID) : AggregateRoot(id) {
     }
 
     private fun apply(event: CapturedEvent) {
+        this.captureIDs.add(event.captureID)
+        if (!isCaptured()) {
+            this.capturedAmount = event.captureAmount
+        } else {
+            this.capturedAmount =
+                Money(event.captureAmount.currency, this.capturedAmount.amount + event.captureAmount.amount)
+        }
         this.isCaptured = true
-        this.captureID = event.captureID
-        this.capturedAmount = event.captureAmount
     }
 
     private fun apply(event: CaptureFailedEvent) {
