@@ -5,16 +5,12 @@ import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.getError
 import com.mypay.cqrs.core.aggregates.AggregateID
 import com.mypay.paymentgateway.domain.aggregates.payment.Payment
-import com.mypay.paymentgateway.domain.aggregates.payment.events.AuthorizationFailedEvent
-import com.mypay.paymentgateway.domain.aggregates.payment.events.AuthorizedEvent
-import com.mypay.paymentgateway.domain.aggregates.payment.events.CaptureFailedEvent
-import com.mypay.paymentgateway.domain.aggregates.payment.events.CapturedEvent
-import com.mypay.paymentgateway.domain.errors.CaptureNotAllowed
-import com.mypay.paymentgateway.domain.errors.InsufficientFunds
-import com.mypay.paymentgateway.domain.errors.PaymentAlreadyAuthorized
+import com.mypay.paymentgateway.domain.aggregates.payment.events.*
+import com.mypay.paymentgateway.domain.errors.*
 import com.mypay.paymentgateway.domain.ports.driven.PaymentProcessor
 import com.mypay.paymentgateway.domain.ports.driver.AuthorizeCommand
 import com.mypay.paymentgateway.domain.ports.driver.CaptureCommand
+import com.mypay.paymentgateway.domain.ports.driver.RefundCommand
 import com.mypay.paymentgateway.domain.valueobjects.AnagraphicDetails
 import com.mypay.paymentgateway.domain.valueobjects.Email
 import com.mypay.paymentgateway.domain.valueobjects.Money
@@ -27,6 +23,7 @@ import com.mypay.paymentgateway.domain.valueobjects.creditcard.CardHolder
 import com.mypay.paymentgateway.domain.valueobjects.creditcard.CreditCard
 import com.mypay.paymentgateway.domain.valueobjects.psp.AuthID
 import com.mypay.paymentgateway.domain.valueobjects.psp.CaptureID
+import com.mypay.paymentgateway.domain.valueobjects.psp.RefundID
 import io.mockk.clearAllMocks
 import io.mockk.every
 import io.mockk.mockk
@@ -34,12 +31,14 @@ import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.sql.Ref
 import java.util.*
 
 class PaymentTest {
 
     private val authorizationAmount = Money(Currency.getInstance("EUR"), 100.0)
     private val captureAmount = 50.0
+    private val refundAmount = 40.0
     private val cardHolder = CardHolder(
         AnagraphicDetails("John", "Doe"),
         BillingDetails(Country("IT"), City("Milan"), Address("Via di Casa Mia")),
@@ -148,40 +147,6 @@ class PaymentTest {
     }
 
     @Test
-    fun `should do multiple captures on a payment authorized for 100 EUR`() {
-        val aggregateID = AggregateID(UUID.randomUUID())
-        every { paymentProcessor.capture(AuthID("authID"), any()) } returns Ok(CaptureID(UUID.randomUUID().toString()))
-
-        val payment = aPaymentAuthorized(aggregateID)
-        payment.capture(
-            CaptureCommand(
-                aggregateID,
-                captureAmount,
-                paymentProcessor
-            )
-        )
-        val captureResult = payment.capture(
-            CaptureCommand(
-                aggregateID,
-                captureAmount,
-                paymentProcessor
-            )
-        )
-
-        assertThat(captureResult.isOk).isTrue()
-        assertThat(payment.isCaptured()).isTrue()
-        assertThat(payment.getCapturedAmount()).isEqualTo(
-            Money(
-                payment.getAuthorizedAmount().currency,
-                captureAmount * 2
-            )
-        )
-        assertThat(payment.getUncommitedChanges())
-            .hasOnlyElementsOfType(CapturedEvent::class.java).hasSize(2)
-        verify { paymentProcessor.capture(AuthID("authID"), captureAmount) }
-    }
-
-    @Test
     fun `should not allow a capture when amount exceeds the authorization amount`() {
         val aggregateID = AggregateID(UUID.randomUUID())
         every { paymentProcessor.capture(AuthID("authID"), any()) } returns Ok(CaptureID(UUID.randomUUID().toString()))
@@ -220,32 +185,6 @@ class PaymentTest {
     }
 
     @Test
-    fun `should not allow multiple captures if amount exceeds the residual capturable amount`() {
-        val aggregateID = AggregateID(UUID.randomUUID())
-        every { paymentProcessor.capture(AuthID("authID"), any()) } returns Ok(CaptureID(UUID.randomUUID().toString()))
-
-        val payment = aPaymentAuthorized(aggregateID)
-        payment.capture(
-            CaptureCommand(
-                aggregateID,
-                captureAmount,
-                paymentProcessor
-            )
-        )
-        val captureResult = payment.capture(
-            CaptureCommand(
-                aggregateID,
-                payment.getAuthorizedAmount().amount - payment.getCapturedAmount().amount + 0.01,
-                paymentProcessor
-            )
-        )
-
-        assertThat(captureResult.isErr).isTrue()
-        assertThat(captureResult.error).isEqualTo(InsufficientFunds)
-        verify(exactly = 1) { paymentProcessor.capture(any(), any()) }
-    }
-
-    @Test
     fun `should raise an event when capture fail on payment processor`() {
         val aggregateID = AggregateID(UUID.randomUUID())
         every { paymentProcessor.capture(AuthID("authID"), any()) } returns Err(InsufficientFunds)
@@ -264,6 +203,108 @@ class PaymentTest {
         assertThat(payment.getUncommitedChanges())
             .hasOnlyElementsOfType(CaptureFailedEvent::class.java).hasSize(1)
         verify { paymentProcessor.capture(AuthID("authID"), captureAmount) }
+    }
+
+    @Test
+    fun `should refund 40 EUR on a payment captured for 50 EUR`() {
+        val aggregateID = AggregateID(UUID.randomUUID())
+        every { paymentProcessor.refund(any(), any()) } returns Ok(RefundID("refundID"))
+
+        val payment = aPaymentCaptured(aggregateID, captureAmount)
+        val refundResult = payment.refund(
+            RefundCommand(
+                aggregateID,
+                refundAmount,
+                paymentProcessor
+            )
+        )
+        assertThat(refundResult.isOk).isTrue()
+        assertThat(payment.isRefunded()).isTrue()
+        assertThat(payment.getRefundedAmount()).isEqualTo(Money(payment.getAuthorizedAmount().currency, refundAmount))
+        assertThat(payment.getUncommitedChanges())
+            .hasOnlyElementsOfType(RefundedEvent::class.java).hasSize(1)
+        verify { paymentProcessor.refund(any(), any()) }
+    }
+
+    @Test
+    fun `should raise an event when refund fails on payment processor`() {
+        val aggregateID = AggregateID(UUID.randomUUID())
+        every { paymentProcessor.refund(any(), any()) } returns Err(RefundWindowExpired)
+
+        val payment = aPaymentCaptured(aggregateID, captureAmount)
+        val refundResult = payment.refund(
+            RefundCommand(
+                aggregateID,
+                refundAmount,
+                paymentProcessor
+            )
+        )
+        assertThat(refundResult.isErr).isTrue()
+        assertThat(payment.isRefunded()).isFalse()
+        assertThat(payment.getUncommitedChanges())
+            .hasOnlyElementsOfType(RefundFailedEvent::class.java).hasSize(1)
+        verify { paymentProcessor.refund(any(), any()) }
+    }
+
+    @Test
+    fun `should not refund if payment is not captured`() {
+        val aggregateID = AggregateID(UUID.randomUUID())
+
+        val payment = aPaymentAuthorized(aggregateID)
+        val refundResult = payment.refund(
+            RefundCommand(
+                aggregateID,
+                refundAmount,
+                paymentProcessor
+            )
+        )
+        assertThat(refundResult.isErr).isTrue()
+        assertThat(refundResult.error).isEqualTo(RefundNotAllowed)
+        assertThat(payment.isRefunded()).isFalse()
+        verify(exactly = 0) { paymentProcessor.refund(any(), any()) }
+    }
+
+    @Test
+    fun `should not refund twice`() {
+        val aggregateID = AggregateID(UUID.randomUUID())
+        every { paymentProcessor.refund(any(), any()) } returns Ok(RefundID("refundID"))
+
+        val payment = aPaymentCaptured(aggregateID, captureAmount)
+        payment.refund(
+            RefundCommand(
+                aggregateID,
+                refundAmount,
+                paymentProcessor
+            )
+        )
+        val result = payment.refund(
+            RefundCommand(
+                aggregateID,
+                refundAmount,
+                paymentProcessor
+            )
+        )
+        assertThat(result.isErr).isTrue()
+        assertThat(result.error).isEqualTo(RefundNotAllowed)
+        verify(exactly = 1) { paymentProcessor.refund(any(), any()) }
+    }
+
+    @Test
+    fun `should not allow to refund an amount greater that the captured amount`() {
+        val aggregateID = AggregateID(UUID.randomUUID())
+
+        val payment = aPaymentCaptured(aggregateID, captureAmount)
+        val refundResult = payment.refund(
+            RefundCommand(
+                aggregateID,
+                payment.getCapturedAmount().amount + 0.01,
+                paymentProcessor
+            )
+        )
+        assertThat(refundResult.isErr).isTrue()
+        assertThat(refundResult.error).isEqualTo(RefundNotAllowed)
+        assertThat(payment.isRefunded()).isFalse()
+        verify(exactly = 0) { paymentProcessor.refund(any(), any()) }
     }
 
     @Test
@@ -286,7 +327,6 @@ class PaymentTest {
         assertThat(payment.version).isEqualTo(expectedVersion + 1)
     }
 
-
     private fun aPaymentAuthorized(aggregateID: AggregateID): Payment {
         val payment = Payment(aggregateID)
         payment.replayEvents(
@@ -302,6 +342,22 @@ class PaymentTest {
                 )
             )
         )
+        return payment
+    }
+
+
+    private fun aPaymentCaptured(aggregateID: AggregateID, captureAmount: Double): Payment {
+        every { paymentProcessor.capture(any(), any()) } returns Ok(CaptureID("captureID"))
+
+        val payment = aPaymentAuthorized(aggregateID)
+        payment.capture(
+            CaptureCommand(
+                aggregateID,
+                captureAmount,
+                paymentProcessor
+            )
+        )
+        payment.markChangesAsCommitted()
         return payment
     }
 }

@@ -7,6 +7,7 @@ import com.mypay.paymentgateway.domain.valueobjects.creditcard.CardHolder
 import com.mypay.paymentgateway.domain.valueobjects.creditcard.CreditCard
 import com.mypay.paymentgateway.domain.valueobjects.psp.AuthID
 import com.mypay.paymentgateway.domain.valueobjects.psp.CaptureID
+import com.mypay.paymentgateway.domain.valueobjects.psp.RefundID
 
 interface PaymentProcessor {
     fun authorize(
@@ -16,4 +17,6 @@ interface PaymentProcessor {
     ): Result<AuthID, DomainError>
 
     fun capture(authorizationID: AuthID, captureAmount: Double): Result<CaptureID, DomainError>
+
+    fun refund(captureID: CaptureID, captureAmount: Double): Result<RefundID, DomainError>
 }

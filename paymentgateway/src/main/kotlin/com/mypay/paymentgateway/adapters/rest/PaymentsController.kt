@@ -7,6 +7,7 @@ import com.mypay.paymentgateway.adapters.rest.dto.AuthorizationDto
 import com.mypay.paymentgateway.domain.ports.driven.PaymentProcessor
 import com.mypay.paymentgateway.domain.ports.driver.AuthorizeCommand
 import com.mypay.paymentgateway.domain.ports.driver.CaptureCommand
+import com.mypay.paymentgateway.domain.ports.driver.RefundCommand
 import com.mypay.paymentgateway.domain.valueobjects.AnagraphicDetails
 import com.mypay.paymentgateway.domain.valueobjects.Email
 import com.mypay.paymentgateway.domain.valueobjects.Money
@@ -73,6 +74,25 @@ class PaymentsController(
         logger.info("New capture request, id : $paymentID amount: $amount")
         val result = commandDispatcher.send(
             CaptureCommand(
+                AggregateID(UUID.fromString(paymentID)),
+                amount,
+                paymentProcessor
+            )
+        )
+        return result.mapBoth(
+            { _ -> ResponseEntity.status(HttpStatus.OK).build() },
+            { ResponseEntity.status(it.httpStatusCode).body(mapOf("reason" to it.description)) }
+        )
+    }
+
+    @DeleteMapping(path = ["/{id}"])
+    fun refund(
+        @PathVariable(value = "id") paymentID: String,
+        @RequestParam(value = "amount") amount: Double
+    ): ResponseEntity<Any> {
+        logger.info("New refund request, id : $paymentID amount: $amount")
+        val result = commandDispatcher.send(
+            RefundCommand(
                 AggregateID(UUID.fromString(paymentID)),
                 amount,
                 paymentProcessor
