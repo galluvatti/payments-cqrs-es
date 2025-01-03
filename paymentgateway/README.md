@@ -1,4 +1,4 @@
-# Payments Command API Application
+# Payments Gateway Command API Application
 
 This is a **Command API** application built using the following technology stack:
 
