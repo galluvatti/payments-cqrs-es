@@ -153,14 +153,14 @@ class PaymentTest {
         every { paymentProcessor.capture(AuthID("authID"), any()) } returns Ok(CaptureID(UUID.randomUUID().toString()))
 
         val payment = aPaymentAuthorized(aggregateID)
-        var captureResult = payment.capture(
+        payment.capture(
             CaptureCommand(
                 aggregateID,
                 captureAmount,
                 paymentProcessor
             )
         )
-        captureResult = payment.capture(
+        val captureResult = payment.capture(
             CaptureCommand(
                 aggregateID,
                 captureAmount,
@@ -170,10 +170,34 @@ class PaymentTest {
 
         assertThat(captureResult.isOk).isTrue()
         assertThat(payment.isCaptured()).isTrue()
-        assertThat(payment.getCapturedAmount()).isEqualTo(Money(payment.getAuthorizedAmount().currency, captureAmount*2))
+        assertThat(payment.getCapturedAmount()).isEqualTo(
+            Money(
+                payment.getAuthorizedAmount().currency,
+                captureAmount * 2
+            )
+        )
         assertThat(payment.getUncommitedChanges())
             .hasOnlyElementsOfType(CapturedEvent::class.java).hasSize(2)
         verify { paymentProcessor.capture(AuthID("authID"), captureAmount) }
+    }
+
+    @Test
+    fun `should not allow a capture when amount exceeds the authorization amount`() {
+        val aggregateID = AggregateID(UUID.randomUUID())
+        every { paymentProcessor.capture(AuthID("authID"), any()) } returns Ok(CaptureID(UUID.randomUUID().toString()))
+
+        val payment = aPaymentAuthorized(aggregateID)
+        val captureResult = payment.capture(
+            CaptureCommand(
+                aggregateID,
+                authorizationAmount.amount + 0.01,
+                paymentProcessor
+            )
+        )
+        assertThat(captureResult.isErr).isTrue()
+        assertThat(captureResult.error).isEqualTo(InsufficientFunds)
+        assertThat(payment.isCaptured()).isFalse()
+        verify(exactly = 0) { paymentProcessor.capture(any(), any()) }
     }
 
     @Test
@@ -196,7 +220,33 @@ class PaymentTest {
     }
 
     @Test
-    fun `should raise an event when capture fail`() {
+    fun `should not allow multiple captures if amount exceeds the residual capturable amount`() {
+        val aggregateID = AggregateID(UUID.randomUUID())
+        every { paymentProcessor.capture(AuthID("authID"), any()) } returns Ok(CaptureID(UUID.randomUUID().toString()))
+
+        val payment = aPaymentAuthorized(aggregateID)
+        payment.capture(
+            CaptureCommand(
+                aggregateID,
+                captureAmount,
+                paymentProcessor
+            )
+        )
+        val captureResult = payment.capture(
+            CaptureCommand(
+                aggregateID,
+                payment.getAuthorizedAmount().amount - payment.getCapturedAmount().amount + 0.01,
+                paymentProcessor
+            )
+        )
+
+        assertThat(captureResult.isErr).isTrue()
+        assertThat(captureResult.error).isEqualTo(InsufficientFunds)
+        verify(exactly = 1) { paymentProcessor.capture(any(), any()) }
+    }
+
+    @Test
+    fun `should raise an event when capture fail on payment processor`() {
         val aggregateID = AggregateID(UUID.randomUUID())
         every { paymentProcessor.capture(AuthID("authID"), any()) } returns Err(InsufficientFunds)
         val payment = aPaymentAuthorized(aggregateID)

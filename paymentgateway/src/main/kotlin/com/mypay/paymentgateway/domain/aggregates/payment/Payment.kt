@@ -9,6 +9,7 @@ import com.mypay.paymentgateway.domain.aggregates.payment.events.CaptureFailedEv
 import com.mypay.paymentgateway.domain.aggregates.payment.events.CapturedEvent
 import com.mypay.paymentgateway.domain.errors.CaptureNotAllowed
 import com.mypay.paymentgateway.domain.errors.DomainError
+import com.mypay.paymentgateway.domain.errors.InsufficientFunds
 import com.mypay.paymentgateway.domain.errors.PaymentAlreadyAuthorized
 import com.mypay.paymentgateway.domain.ports.driver.AuthorizeCommand
 import com.mypay.paymentgateway.domain.ports.driver.CaptureCommand
@@ -72,6 +73,7 @@ class Payment(id: AggregateID) : AggregateRoot(id) {
 
     fun capture(command: CaptureCommand): Result<Unit, DomainError> {
         if (!isAuthorized) return Err(CaptureNotAllowed)
+        if (exceedsCapturableAmount(command.captureAmount)) return Err(InsufficientFunds)
         val pspResponse = command.paymentProcessor.capture(authID, command.captureAmount)
             .onSuccess {
                 raiseEvent(
@@ -99,6 +101,14 @@ class Payment(id: AggregateID) : AggregateRoot(id) {
             { Ok(Unit) },
             { Err(it) }
         )
+    }
+
+    private fun exceedsCapturableAmount(requestedAmount: Double): Boolean {
+        return if (!isCaptured()) {
+            requestedAmount > this.authorizedAmount.amount
+        } else {
+            requestedAmount > this.authorizedAmount.amount - capturedAmount.amount
+        }
     }
 
     private fun apply(event: AuthorizedEvent) {
