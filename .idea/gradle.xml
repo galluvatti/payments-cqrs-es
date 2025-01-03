@@ -11,6 +11,15 @@
           </set>
         </option>
       </GradleProjectSettings>
+      <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/payments-query" />
+        <option name="gradleJvm" value="#JAVA_HOME" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/payments-query" />
+          </set>
+        </option>
+      </GradleProjectSettings>
     </option>
   </component>
 </project>

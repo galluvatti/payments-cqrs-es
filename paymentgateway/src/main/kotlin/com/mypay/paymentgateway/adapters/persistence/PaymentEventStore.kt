@@ -48,7 +48,7 @@ class PaymentEventStore(
                     aggregateId = aggregateID.value.toString(),
                     aggregateType = Payment::javaClass.javaClass.simpleName,
                     version = it.version,
-                    eventType = it.getType(),
+                    eventType = it.eventType,
                     eventData = it
 
                 )

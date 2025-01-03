@@ -140,6 +140,7 @@ class Payment(id: AggregateID) : AggregateRoot(id) {
     }
 
     private fun apply(event: AuthorizationFailedEvent) {
+        logger.info("Doing nothing for this event $event")
     }
 
     private fun apply(event: CapturedEvent) {
@@ -149,6 +150,7 @@ class Payment(id: AggregateID) : AggregateRoot(id) {
     }
 
     private fun apply(event: CaptureFailedEvent) {
+        logger.info("Doing nothing for this event $event")
     }
 
     private fun apply(event: RefundedEvent) {
@@ -158,6 +160,7 @@ class Payment(id: AggregateID) : AggregateRoot(id) {
     }
 
     private fun apply(event: RefundFailedEvent) {
+        logger.info("Doing nothing for this event $event")
     }
 
     fun isAuthorized(): Boolean {
