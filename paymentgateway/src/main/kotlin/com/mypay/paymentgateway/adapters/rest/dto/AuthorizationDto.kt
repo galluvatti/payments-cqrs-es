@@ -2,6 +2,7 @@ package com.mypay.paymentgateway.adapters.rest.dto
 
 //TODO Validations
 data class AuthorizationDto(
+    val merchantID: String,
     val amount: Double,
     val currency: String,
     val cardHolderName: String,

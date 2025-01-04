@@ -4,24 +4,18 @@ import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import com.mypay.cqrs.core.aggregates.AggregateID
 import com.mypay.cqrs.core.infrastructure.EventStore
-import com.mypay.paymentgateway.domain.aggregates.payment.Payment
-import com.mypay.paymentgateway.domain.aggregates.payment.events.AuthorizedEvent
-import com.mypay.paymentgateway.domain.aggregates.payment.events.CapturedEvent
 import com.mypay.paymentgateway.domain.errors.OptimisticConcurrencyViolation
-import com.mypay.paymentgateway.domain.ports.driven.PaymentProcessor
-import com.mypay.paymentgateway.domain.ports.driver.AuthorizeCommand
-import com.mypay.paymentgateway.domain.valueobjects.AnagraphicDetails
-import com.mypay.paymentgateway.domain.valueobjects.Email
-import com.mypay.paymentgateway.domain.valueobjects.Money
-import com.mypay.paymentgateway.domain.valueobjects.Order
+import com.mypay.paymentgateway.domain.events.Authorized
+import com.mypay.paymentgateway.domain.events.Captured
+import com.mypay.paymentgateway.domain.payment.Payment
+import com.mypay.paymentgateway.domain.services.FraudInvestigator
+import com.mypay.paymentgateway.domain.valueobjects.*
 import com.mypay.paymentgateway.domain.valueobjects.address.Address
 import com.mypay.paymentgateway.domain.valueobjects.address.City
 import com.mypay.paymentgateway.domain.valueobjects.address.Country
 import com.mypay.paymentgateway.domain.valueobjects.billing.BillingDetails
 import com.mypay.paymentgateway.domain.valueobjects.creditcard.CardHolder
 import com.mypay.paymentgateway.domain.valueobjects.creditcard.CreditCard
-import com.mypay.paymentgateway.domain.valueobjects.psp.AuthID
-import com.mypay.paymentgateway.domain.valueobjects.psp.CaptureID
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -38,9 +32,14 @@ class PaymentEventSourcingHandlerTest {
         Email("itsme@mail.com")
     )
     private val creditCard =
-        CreditCard("4111111111111111", "123", CreditCard.CardExpiration(1, 2030), CreditCard.CardType.VISA)
+        CreditCard(
+            CreditCard.Pan("4111111111111111"),
+            "123",
+            CreditCard.CardExpiration(1, 2030),
+            CreditCard.CardBrand.VISA
+        )
     private val order = Order("orderID", "Wonderful Hotel, reservation for 2 people, 3 nights from 01/01/2025")
-    private val paymentProcessor = mockk<PaymentProcessor>()
+    private val fraudInvestigator = mockk<FraudInvestigator>()
     private val eventStore = mockk<EventStore>()
 
     @Test
@@ -72,42 +71,37 @@ class PaymentEventSourcingHandlerTest {
     fun `given an aggregate ID, it should load load past events and replay them`() {
         val aggregateID = AggregateID(UUID.randomUUID())
         every { eventStore.getEvents(aggregateID) } returns listOf(
-            AuthorizedEvent(
+            Authorized(
                 aggregateID,
                 0,
+                Merchant("merchantID"),
                 authorizationAmount,
                 cardHolder,
                 creditCard,
-                order,
-                AuthID("authID")
+                order
             ),
-            CapturedEvent(
+            Captured(
                 aggregateID,
                 1,
-                captureAmount,
-                CaptureID("captureID")
+                captureAmount
             )
         )
         val payment = PaymentEventSourcingHandler(eventStore).getById(aggregateID)
         assertThat(payment.version).isEqualTo(1)
-        assertThat(payment.isCaptured()).isTrue()
-        assertThat(payment.getAuthorizedAmount()).isEqualTo(authorizationAmount)
-        assertThat(payment.getCapturedAmount()).isEqualTo(captureAmount)
+        assertThat(payment.getStatus()).isEqualTo(Payment.Status.CAPTURED)
     }
 
     private fun aPaymentWithAnAuthorizationEvent(): Payment {
-        every { paymentProcessor.authorize(any(), any(), any()) } returns Ok(AuthID("authID"))
+        every { fraudInvestigator.isFraud(any(), any()) } returns false
         val aggregateID = AggregateID(UUID.randomUUID())
         val aggregate = Payment(aggregateID)
         aggregate.authorize(
-            AuthorizeCommand(
-                aggregateID,
-                authorizationAmount,
-                cardHolder,
-                creditCard,
-                order,
-                paymentProcessor
-            )
+            Merchant("merchantID"),
+            authorizationAmount,
+            cardHolder,
+            creditCard,
+            order,
+            fraudInvestigator
         )
         return aggregate
     }

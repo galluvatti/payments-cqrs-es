@@ -4,14 +4,10 @@ import com.github.michaelbull.result.mapBoth
 import com.mypay.cqrs.core.aggregates.AggregateID
 import com.mypay.cqrs.core.infrastructure.CommandDispatcher
 import com.mypay.paymentgateway.adapters.rest.dto.AuthorizationDto
-import com.mypay.paymentgateway.domain.ports.driven.PaymentProcessor
-import com.mypay.paymentgateway.domain.ports.driver.AuthorizeCommand
-import com.mypay.paymentgateway.domain.ports.driver.CaptureCommand
-import com.mypay.paymentgateway.domain.ports.driver.RefundCommand
-import com.mypay.paymentgateway.domain.valueobjects.AnagraphicDetails
-import com.mypay.paymentgateway.domain.valueobjects.Email
-import com.mypay.paymentgateway.domain.valueobjects.Money
-import com.mypay.paymentgateway.domain.valueobjects.Order
+import com.mypay.paymentgateway.application.commands.Authorize
+import com.mypay.paymentgateway.application.commands.Capture
+import com.mypay.paymentgateway.application.commands.Refund
+import com.mypay.paymentgateway.domain.valueobjects.*
 import com.mypay.paymentgateway.domain.valueobjects.address.Address
 import com.mypay.paymentgateway.domain.valueobjects.address.City
 import com.mypay.paymentgateway.domain.valueobjects.address.Country
@@ -28,8 +24,7 @@ import java.util.*
 @RestController
 @RequestMapping(path = ["/payments"])
 class PaymentsController(
-    @Autowired private val commandDispatcher: CommandDispatcher,
-    @Autowired private val paymentProcessor: PaymentProcessor
+    @Autowired private val commandDispatcher: CommandDispatcher
 ) {
     private val logger = LoggerFactory.getLogger(PaymentsController::class.java)
 
@@ -38,7 +33,8 @@ class PaymentsController(
         logger.info("New authorization request: $request")
         val paymentID = UUID.randomUUID()
         val result = commandDispatcher.send(
-            AuthorizeCommand(
+            Authorize(
+                Merchant(request.merchantID),
                 AggregateID(paymentID),
                 Money(Currency.getInstance(request.currency), request.amount),
                 CardHolder(
@@ -51,13 +47,12 @@ class PaymentsController(
                     Email(request.cardHolderEmail)
                 ),
                 CreditCard(
-                    request.cardNumber,
+                    CreditCard.Pan(request.cardNumber),
                     request.cardCvv,
                     CreditCard.CardExpiration(request.cardExpiryMonth, request.cardExpiryYear),
-                    CreditCard.CardType.valueOf(request.cardType)
+                    CreditCard.CardBrand.valueOf(request.cardType)
                 ),
-                Order(request.orderId, request.orderDescription),
-                paymentProcessor
+                Order(request.orderId, request.orderDescription)
             )
         )
         return result.mapBoth(
@@ -73,10 +68,9 @@ class PaymentsController(
     ): ResponseEntity<Any> {
         logger.info("New capture request, id : $paymentID amount: $amount")
         val result = commandDispatcher.send(
-            CaptureCommand(
+            Capture(
                 AggregateID(UUID.fromString(paymentID)),
-                amount,
-                paymentProcessor
+                amount
             )
         )
         return result.mapBoth(
@@ -92,10 +86,9 @@ class PaymentsController(
     ): ResponseEntity<Any> {
         logger.info("New refund request, id : $paymentID amount: $amount")
         val result = commandDispatcher.send(
-            RefundCommand(
+            Refund(
                 AggregateID(UUID.fromString(paymentID)),
-                amount,
-                paymentProcessor
+                amount
             )
         )
         return result.mapBoth(

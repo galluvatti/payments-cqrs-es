@@ -4,7 +4,7 @@ import com.github.michaelbull.result.*
 import com.mypay.cqrs.core.aggregates.AggregateID
 import com.mypay.cqrs.core.handlers.EventSourcingHandler
 import com.mypay.cqrs.core.infrastructure.EventStore
-import com.mypay.paymentgateway.domain.aggregates.payment.Payment
+import com.mypay.paymentgateway.domain.payment.Payment
 import com.mypay.paymentgateway.domain.errors.DomainError
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired

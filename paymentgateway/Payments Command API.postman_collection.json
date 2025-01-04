@@ -34,7 +34,54 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n  \"amount\": 100.50,\n  \"currency\": \"USD\",\n  \"cardHolderName\": \"John\",\n  \"cardHolderSurname\": \"Doe\",\n  \"cardHolderEmail\": \"john.doe@example.com\",\n  \"cardHolderCountry\": \"US\",\n  \"cardHolderCity\": \"New York\",\n  \"cardHolderAddress\": \"123 Main Street\",\n  \"cardNumber\": \"4111111111111111\",\n  \"cardCvv\": \"123\",\n  \"cardExpiryMonth\": 12,\n  \"cardExpiryYear\": 2025,\n  \"cardType\": \"VISA\",\n  \"orderId\": \"ORD123456789\",\n  \"orderDescription\": \"Payment for order #ORD123456789\"\n}\n",
+					"raw": "{\n  \"merchantID\": \"zalando\",\n  \"amount\": 100.50,\n  \"currency\": \"USD\",\n  \"cardHolderName\": \"John\",\n  \"cardHolderSurname\": \"Doe\",\n  \"cardHolderEmail\": \"john.doe@example.com\",\n  \"cardHolderCountry\": \"US\",\n  \"cardHolderCity\": \"New York\",\n  \"cardHolderAddress\": \"123 Main Street\",\n  \"cardNumber\": \"4111111111111111\",\n  \"cardCvv\": \"123\",\n  \"cardExpiryMonth\": 12,\n  \"cardExpiryYear\": 2025,\n  \"cardType\": \"VISA\",\n  \"orderId\": \"ORD123456789\",\n  \"orderDescription\": \"Payment for order #ORD123456789\"\n}\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/payments",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"payments"
+					]
+				},
+				"description": "The tests in this request validate that the request body sent as form-data is valid."
+			},
+			"response": []
+		},
+		{
+			"name": "Authorize a payment in Fraud",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const json = pm.response.json();\r",
+							"\r",
+							"// Validate raw body sent in the request, be it form-data or JSON\r",
+							"pm.test(\"`form` should contain the correct form data\", function () {\r",
+							"    pm.expect(json.form).to.be.an('object');\r",
+							"    pm.expect(json.form.foo1).to.eql('bar1');\r",
+							"    pm.expect(json.form.foo2).to.eql('bar2');\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"merchantID\": \"zalando\",\n  \"amount\": 100.50,\n  \"currency\": \"USD\",\n  \"cardHolderName\": \"John\",\n  \"cardHolderSurname\": \"Doe\",\n  \"cardHolderEmail\": \"john.doe@example.com\",\n  \"cardHolderCountry\": \"US\",\n  \"cardHolderCity\": \"New York\",\n  \"cardHolderAddress\": \"123 Main Street\",\n  \"cardNumber\": \"4242424242424242\",\n  \"cardCvv\": \"123\",\n  \"cardExpiryMonth\": 12,\n  \"cardExpiryYear\": 2025,\n  \"cardType\": \"VISA\",\n  \"orderId\": \"ORD123456789\",\n  \"orderDescription\": \"Payment for order #ORD123456789\"\n}\n",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -89,7 +136,7 @@
 					}
 				},
 				"url": {
-					"raw": "{{baseUrl}}/payments/{{paymentID}}?amount=500.00",
+					"raw": "{{baseUrl}}/payments/{{paymentID}}?amount=50.00",
 					"host": [
 						"{{baseUrl}}"
 					],
@@ -100,7 +147,7 @@
 					"query": [
 						{
 							"key": "amount",
-							"value": "500.00"
+							"value": "50.00"
 						}
 					]
 				},

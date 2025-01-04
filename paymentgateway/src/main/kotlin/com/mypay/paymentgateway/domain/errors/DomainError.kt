@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatusCode
 
 sealed class DomainError(val httpStatusCode: HttpStatusCode, val description: String)
 
+data object SuspectFraud: DomainError(HttpStatus.FORBIDDEN, "Suspect fraud detected")
 data object InsufficientFunds: DomainError(HttpStatus.BAD_REQUEST, "Insufficient funds on card")
 data object PaymentAlreadyAuthorized: DomainError(HttpStatus.FORBIDDEN, "Payment can't be authorized twice")
 data object CaptureNotAllowed: DomainError(HttpStatus.FORBIDDEN, "Payment can't be captured")

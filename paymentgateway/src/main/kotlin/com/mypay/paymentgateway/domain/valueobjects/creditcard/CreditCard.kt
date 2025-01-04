@@ -1,17 +1,20 @@
 package com.mypay.paymentgateway.domain.valueobjects.creditcard
 
 data class CreditCard(
-    val pan: String,
+    val pan: Pan,
     val cvv: String,
     val expiration: CardExpiration,
-    val type: CardType
+    val type: CardBrand
 ) {
+
+    data class Pan(val value: String)
+
     data class CardExpiration(
         val month: Int,
         val year: Int
     )
 
-    enum class CardType {
-        VISA, MASTERCARD, AMEX
+    enum class CardBrand {
+        VISA, MASTERCARD, AMEX, DISCOVERY
     }
 }
