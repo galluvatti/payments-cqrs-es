@@ -5,8 +5,8 @@ import com.github.michaelbull.result.Ok
 import com.mypay.cqrs.core.aggregates.AggregateID
 import com.mypay.cqrs.core.infrastructure.EventStore
 import com.mypay.paymentgateway.domain.errors.OptimisticConcurrencyViolation
-import com.mypay.paymentgateway.domain.events.Authorized
-import com.mypay.paymentgateway.domain.events.Captured
+import com.mypay.paymentgateway.domain.events.PaymentAuthorized
+import com.mypay.paymentgateway.domain.events.PaymentCaptured
 import com.mypay.paymentgateway.domain.payment.Money
 import com.mypay.paymentgateway.domain.payment.Payment
 import com.mypay.paymentgateway.domain.services.FraudInvestigator
@@ -76,7 +76,7 @@ class PaymentEventSourcingHandlerTest {
     fun `given an aggregate ID, it should load load past events and replay them`() {
         val aggregateID = AggregateID(UUID.randomUUID())
         every { eventStore.getEvents(aggregateID) } returns listOf(
-            Authorized(
+            PaymentAuthorized(
                 aggregateID,
                 0,
                 Merchant("merchantID"),
@@ -85,7 +85,7 @@ class PaymentEventSourcingHandlerTest {
                 creditCard,
                 order
             ),
-            Captured(
+            PaymentCaptured(
                 aggregateID,
                 1,
                 captureAmount,

@@ -4,7 +4,7 @@ import com.mypay.cqrs.core.aggregates.AggregateID
 import com.mypay.cqrs.core.events.DomainEvent
 import com.mypay.paymentgateway.domain.payment.Money
 
-class Refunded(
+class PaymentRefunded(
     aggregateID: AggregateID,
     version: Int,
     val refundAmount: Money

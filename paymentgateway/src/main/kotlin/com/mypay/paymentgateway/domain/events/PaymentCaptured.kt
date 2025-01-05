@@ -5,7 +5,7 @@ import com.mypay.cqrs.core.events.DomainEvent
 import com.mypay.paymentgateway.domain.payment.Money
 import java.time.LocalDateTime
 
-class Captured(
+class PaymentCaptured(
     aggregateID: AggregateID,
     version: Int,
     val captureAmount: Money,

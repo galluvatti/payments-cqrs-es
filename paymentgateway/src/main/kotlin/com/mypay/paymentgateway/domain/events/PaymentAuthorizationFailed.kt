@@ -7,7 +7,7 @@ import com.mypay.paymentgateway.domain.payment.merchant.Order
 import com.mypay.paymentgateway.domain.payment.creditcard.CardHolder
 import com.mypay.paymentgateway.domain.payment.creditcard.CreditCard
 
-class AuthorizationFailed(
+class PaymentAuthorizationFailed(
     aggregateID: AggregateID,
     version: Int,
     val authorizationAmount: Money,

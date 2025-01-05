@@ -55,7 +55,7 @@ class Payment(id: AggregateID) : AggregateRoot(id) {
             Err(SuspectFraud)
         } else {
             raiseEvent(
-                Authorized(
+                PaymentAuthorized(
                     this.id,
                     this.version,
                     merchant,
@@ -74,7 +74,7 @@ class Payment(id: AggregateID) : AggregateRoot(id) {
         return if (amount > this.authorizedAmount.amount) {
             logger.error("Capture not allowed for payment $id: the requested amount is greater than authorized amount.")
             raiseEvent(
-                CaptureFailed(
+                PaymentCaptureFailed(
                     this.id,
                     this.version,
                     Money(this.authorizedAmount.currency, amount),
@@ -84,7 +84,7 @@ class Payment(id: AggregateID) : AggregateRoot(id) {
         } else {
             val fees = merchantFees.calculate(amount)
             raiseEvent(
-                Captured(
+                PaymentCaptured(
                     this.id,
                     this.version,
                     Money(this.authorizedAmount.currency, amount),
@@ -103,7 +103,7 @@ class Payment(id: AggregateID) : AggregateRoot(id) {
         if (amount > this.capturedAmount.amount) {
             logger.error("Refund not allowed for payment $id: the requested amount is greater than captured amount.")
             raiseEvent(
-                RefundFailed(
+                PaymentRefundFailed(
                     this.id,
                     this.version,
                     Money(this.authorizedAmount.currency, amount),
@@ -114,7 +114,7 @@ class Payment(id: AggregateID) : AggregateRoot(id) {
         if (!refundPolicy.isRefundable(this)) {
             logger.error("Refund not allowed for payment $id: the company policy is not matched.")
             raiseEvent(
-                RefundFailed(
+                PaymentRefundFailed(
                     this.id,
                     this.version,
                     Money(this.authorizedAmount.currency, amount),
@@ -123,7 +123,7 @@ class Payment(id: AggregateID) : AggregateRoot(id) {
             return Err(RefundNotAllowed)
         }
         raiseEvent(
-            Refunded(
+            PaymentRefunded(
                 this.id,
                 this.version,
                 Money(this.authorizedAmount.currency, amount),
@@ -136,28 +136,28 @@ class Payment(id: AggregateID) : AggregateRoot(id) {
         this.status = Status.FRAUD
     }
 
-    private fun apply(event: Authorized) {
+    private fun apply(event: PaymentAuthorized) {
         this.authorizedAmount = event.authorizationAmount
         this.status = Status.AUTHORIZED
     }
 
-    private fun apply(event: Captured) {
+    private fun apply(event: PaymentCaptured) {
         this.capturedAmount = event.captureAmount
         this.merchantFees = Money(capturedAmount.currency, event.fees)
         this.status = Status.CAPTURED
         this.captureDate = event.captureDate
     }
 
-    private fun apply(event: CaptureFailed) {
+    private fun apply(event: PaymentCaptureFailed) {
         logger.info("Doing nothing for this event $event")
     }
 
-    private fun apply(event: Refunded) {
+    private fun apply(event: PaymentRefunded) {
         this.refundedAmount = event.refundAmount
         this.status = Status.REFUNDED
     }
 
-    private fun apply(event: RefundFailed) {
+    private fun apply(event: PaymentRefundFailed) {
         logger.info("Doing nothing for this event $event")
     }
 

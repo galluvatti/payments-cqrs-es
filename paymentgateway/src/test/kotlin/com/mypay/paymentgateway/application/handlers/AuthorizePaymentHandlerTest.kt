@@ -5,7 +5,7 @@ import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.getError
 import com.mypay.cqrs.core.aggregates.AggregateID
 import com.mypay.cqrs.core.handlers.EventSourcingHandler
-import com.mypay.paymentgateway.application.commands.Authorize
+import com.mypay.paymentgateway.application.commands.AuthorizePayment
 import com.mypay.paymentgateway.domain.errors.OptimisticConcurrencyViolation
 import com.mypay.paymentgateway.domain.payment.Money
 import com.mypay.paymentgateway.domain.payment.Payment
@@ -27,19 +27,19 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.util.*
 
-class AuthorizeHandlerTest {
+class AuthorizePaymentHandlerTest {
     @Test
     fun `should authorize and save aggregate`() {
         val eventSourcingHandler = mockk<EventSourcingHandler<Payment>>()
         every { eventSourcingHandler.save(any()) } returns Ok(Unit)
 
-        val authorizationResult = AuthorizeHandler(
+        val authorizationResult = AuthorizePaymentHandler(
             eventSourcingHandler, InMemoryBlacklistFraudInvestigator(
                 emptyList(),
                 emptyList()
             )
         ).handle(
-            Authorize(
+            AuthorizePayment(
                 Merchant("merchantID"),
                 AggregateID(UUID.randomUUID()),
                 Money(Currency.getInstance("EUR"), 100.00),
@@ -72,14 +72,14 @@ class AuthorizeHandlerTest {
         val eventSourcingHandler = mockk<EventSourcingHandler<Payment>>()
         every { eventSourcingHandler.save(any()) } returns Ok(Unit)
 
-        val authorizationResult = AuthorizeHandler(
+        val authorizationResult = AuthorizePaymentHandler(
             eventSourcingHandler,
             InMemoryBlacklistFraudInvestigator(
                 listOf(CreditCard.Pan("4111111111111111")),
                 emptyList()
             )
         ).handle(
-            Authorize(
+            AuthorizePayment(
                 Merchant("merchantID"),
                 AggregateID(UUID.randomUUID()),
                 Money(Currency.getInstance("EUR"), 100.00),
@@ -112,13 +112,13 @@ class AuthorizeHandlerTest {
 
         every { eventSourcingHandler.save(any()) } returns Err(eventSourcingHandlerResult)
 
-        val authorizationResult = AuthorizeHandler(
+        val authorizationResult = AuthorizePaymentHandler(
             eventSourcingHandler, InMemoryBlacklistFraudInvestigator(
                 emptyList(),
                 emptyList()
             )
         ).handle(
-            Authorize(
+            AuthorizePayment(
                 Merchant("merchantID"),
                 AggregateID(UUID.randomUUID()),
                 Money(Currency.getInstance("EUR"), 100.00),

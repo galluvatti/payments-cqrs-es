@@ -2,12 +2,12 @@ package com.mypay.paymentgateway
 
 import com.mypay.cqrs.core.handlers.EventSourcingHandler
 import com.mypay.cqrs.core.infrastructure.CommandDispatcher
-import com.mypay.paymentgateway.application.commands.Authorize
-import com.mypay.paymentgateway.application.commands.Capture
-import com.mypay.paymentgateway.application.commands.Refund
-import com.mypay.paymentgateway.application.handlers.AuthorizeHandler
-import com.mypay.paymentgateway.application.handlers.CaptureHandler
-import com.mypay.paymentgateway.application.handlers.RefundHandler
+import com.mypay.paymentgateway.application.commands.AuthorizePayment
+import com.mypay.paymentgateway.application.commands.CapturePayment
+import com.mypay.paymentgateway.application.commands.RefundPayment
+import com.mypay.paymentgateway.application.handlers.AuthorizePaymentHandler
+import com.mypay.paymentgateway.application.handlers.CapturePaymentHandler
+import com.mypay.paymentgateway.application.handlers.RefundPaymentHandler
 import com.mypay.paymentgateway.domain.payment.Payment
 import com.mypay.paymentgateway.domain.services.InMemoryBlacklistFraudInvestigator
 import com.mypay.paymentgateway.domain.payment.billing.Email
@@ -33,7 +33,7 @@ class PaymentGatewayApplication {
     @PostConstruct
     fun registerCommands() {
         commandDispacther.registerHandler(
-            Authorize::class.java, AuthorizeHandler(
+            AuthorizePayment::class.java, AuthorizePaymentHandler(
                 eventSourcingHandler,
                 InMemoryBlacklistFraudInvestigator(
                     listOf(CreditCard.Pan("4242424242424242")),
@@ -42,10 +42,10 @@ class PaymentGatewayApplication {
             )
         )
         commandDispacther.registerHandler(
-            Capture::class.java, CaptureHandler(eventSourcingHandler, merchantFees)
+            CapturePayment::class.java, CapturePaymentHandler(eventSourcingHandler, merchantFees)
         )
         commandDispacther.registerHandler(
-            Refund::class.java, RefundHandler(eventSourcingHandler, refundPolicy)
+            RefundPayment::class.java, RefundPaymentHandler(eventSourcingHandler, refundPolicy)
         )
     }
 }

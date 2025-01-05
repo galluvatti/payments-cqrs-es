@@ -72,7 +72,7 @@ class PaymentTest {
 
         assertThat(authorizationResult.isOk).isTrue()
         assertThat(payment.getUncommitedChanges())
-            .hasOnlyElementsOfType(Authorized::class.java).hasSize(1)
+            .hasOnlyElementsOfType(PaymentAuthorized::class.java).hasSize(1)
     }
 
     @Test
@@ -125,7 +125,7 @@ class PaymentTest {
 
         assertThat(captureResult.isOk).isTrue()
         assertThat(payment.getUncommitedChanges())
-            .hasOnlyElementsOfType(Captured::class.java).hasSize(1)
+            .hasOnlyElementsOfType(PaymentCaptured::class.java).hasSize(1)
     }
 
     @Test
@@ -138,7 +138,7 @@ class PaymentTest {
         assertThat(captureResult.isErr).isTrue()
         assertThat(captureResult.error).isEqualTo(InsufficientFunds)
         assertThat(payment.getUncommitedChanges())
-            .hasOnlyElementsOfType(CaptureFailed::class.java).hasSize(1)
+            .hasOnlyElementsOfType(PaymentCaptureFailed::class.java).hasSize(1)
     }
 
     @Test
@@ -187,7 +187,7 @@ class PaymentTest {
 
         assertThat(refundResult.isOk).isTrue()
         assertThat(payment.getUncommitedChanges())
-            .hasOnlyElementsOfType(Refunded::class.java).hasSize(1)
+            .hasOnlyElementsOfType(PaymentRefunded::class.java).hasSize(1)
     }
 
     @Test
@@ -224,7 +224,7 @@ class PaymentTest {
         assertThat(refundResult.isErr).isTrue()
         assertThat(refundResult.error).isEqualTo(RefundNotAllowed)
         assertThat(payment.getUncommitedChanges())
-            .hasOnlyElementsOfType(RefundFailed::class.java).hasSize(1)
+            .hasOnlyElementsOfType(PaymentRefundFailed::class.java).hasSize(1)
     }
 
     @Test
@@ -238,7 +238,7 @@ class PaymentTest {
         assertThat(refundResult.isErr).isTrue()
         assertThat(refundResult.error).isEqualTo(RefundNotAllowed)
         assertThat(payment.getUncommitedChanges())
-            .hasOnlyElementsOfType(RefundFailed::class.java).hasSize(1)
+            .hasOnlyElementsOfType(PaymentRefundFailed::class.java).hasSize(1)
 
         verify { refundPolicy.isRefundable(any()) }
     }
@@ -261,7 +261,7 @@ class PaymentTest {
         val payment = Payment(aggregateID)
         payment.replayEvents(
             listOf(
-                Authorized(
+                PaymentAuthorized(
                     aggregateID,
                     0,
                     Merchant("merchantID"),
@@ -280,7 +280,7 @@ class PaymentTest {
         val payment = Payment(aggregateID)
         payment.replayEvents(
             listOf(
-                Authorized(
+                PaymentAuthorized(
                     aggregateID,
                     0,
                     Merchant("merchantID"),
@@ -289,7 +289,7 @@ class PaymentTest {
                     creditCard,
                     order
                 ),
-                Captured(
+                PaymentCaptured(
                     aggregateID,
                     1,
                     Money(authorizationAmount.currency, captureAmount),
@@ -305,7 +305,7 @@ class PaymentTest {
         val payment = Payment(aggregateID)
         payment.replayEvents(
             listOf(
-                Authorized(
+                PaymentAuthorized(
                     aggregateID,
                     0,
                     Merchant("merchantID"),
@@ -314,14 +314,14 @@ class PaymentTest {
                     creditCard,
                     order
                 ),
-                Captured(
+                PaymentCaptured(
                     aggregateID,
                     1,
                     Money(authorizationAmount.currency, captureAmount),
                     1.00,
                     LocalDateTime.now()
                 ),
-                Refunded(
+                PaymentRefunded(
                     aggregateID,
                     2,
                     Money(authorizationAmount.currency, refundAmount)

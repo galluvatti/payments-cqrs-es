@@ -3,8 +3,8 @@ package com.mypay.paymentgateway.adapters.persistence
 import com.mypay.cqrs.core.aggregates.AggregateID
 import com.mypay.cqrs.core.events.EventModel
 import com.mypay.cqrs.core.infrastructure.EventProducer
-import com.mypay.paymentgateway.domain.events.Authorized
-import com.mypay.paymentgateway.domain.events.Captured
+import com.mypay.paymentgateway.domain.events.PaymentAuthorized
+import com.mypay.paymentgateway.domain.events.PaymentCaptured
 import com.mypay.paymentgateway.domain.errors.OptimisticConcurrencyViolation
 import com.mypay.paymentgateway.domain.payment.Money
 import com.mypay.paymentgateway.domain.payment.address.Address
@@ -48,10 +48,10 @@ class PaymentEventStoreTest {
     @Test
     fun `should retrieve events by aggregate id`() {
         val aggregateID = AggregateID(UUID.randomUUID())
-        val authorizedEvent = Authorized(
+        val authorizedEvent = PaymentAuthorized(
             aggregateID, 0, Merchant("merchantID"), authorizationAmount, cardHolder, creditCard, order
         )
-        val capturedEvent = Captured(aggregateID, 1, captureAmount, 1.00, LocalDateTime.now())
+        val capturedEvent = PaymentCaptured(aggregateID, 1, captureAmount, 1.00, LocalDateTime.now())
         every { repository.findByAggregateId(aggregateID.value.toString()) } returns listOf(
             EventModel(
                 "id1", Date(), aggregateID.toString(), "Payment", 0,
@@ -71,10 +71,10 @@ class PaymentEventStoreTest {
     @Test
     fun `should save events by aggregate id and publish them`() {
         val aggregateID = AggregateID(UUID.randomUUID())
-        val authorizedEvent = Authorized(
+        val authorizedEvent = PaymentAuthorized(
             aggregateID, 0, Merchant("merchantID"), authorizationAmount, cardHolder, creditCard, order
         )
-        val capturedEvent = Captured(aggregateID, 1, captureAmount, 1.00, LocalDateTime.now())
+        val capturedEvent = PaymentCaptured(aggregateID, 1, captureAmount, 1.00, LocalDateTime.now())
         every { repository.findByAggregateId(aggregateID.value.toString()) } returns listOf(
             EventModel(
                 "id1", Date(), aggregateID.toString(), "Payment", 0,
@@ -94,10 +94,10 @@ class PaymentEventStoreTest {
     @Test
     fun `should return an error when saving events on a wrong aggregate version`() {
         val aggregateID = AggregateID(UUID.randomUUID())
-        val authorizedEvent = Authorized(
+        val authorizedEvent = PaymentAuthorized(
             aggregateID, 0, Merchant("merchantID"), authorizationAmount, cardHolder, creditCard, order
         )
-        val capturedEvent = Captured(aggregateID, 1, captureAmount, 1.00, LocalDateTime.now())
+        val capturedEvent = PaymentCaptured(aggregateID, 1, captureAmount, 1.00, LocalDateTime.now())
         every { repository.findByAggregateId(aggregateID.value.toString()) } returns listOf(
             EventModel(
                 "id1", Date(), aggregateID.toString(), "Payment", 0,

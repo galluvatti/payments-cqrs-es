@@ -4,9 +4,9 @@ import com.github.michaelbull.result.mapBoth
 import com.mypay.cqrs.core.aggregates.AggregateID
 import com.mypay.cqrs.core.infrastructure.CommandDispatcher
 import com.mypay.paymentgateway.adapters.rest.dto.AuthorizationDto
-import com.mypay.paymentgateway.application.commands.Authorize
-import com.mypay.paymentgateway.application.commands.Capture
-import com.mypay.paymentgateway.application.commands.Refund
+import com.mypay.paymentgateway.application.commands.AuthorizePayment
+import com.mypay.paymentgateway.application.commands.CapturePayment
+import com.mypay.paymentgateway.application.commands.RefundPayment
 import com.mypay.paymentgateway.domain.payment.Money
 import com.mypay.paymentgateway.domain.payment.address.Address
 import com.mypay.paymentgateway.domain.payment.address.City
@@ -37,7 +37,7 @@ class PaymentsController(
         logger.info("New authorization request: $request")
         val paymentID = UUID.randomUUID()
         val result = commandDispatcher.send(
-            Authorize(
+            AuthorizePayment(
                 Merchant(request.merchantID),
                 AggregateID(paymentID),
                 Money(Currency.getInstance(request.currency), request.amount),
@@ -72,7 +72,7 @@ class PaymentsController(
     ): ResponseEntity<Any> {
         logger.info("New capture request, id : $paymentID amount: $amount")
         val result = commandDispatcher.send(
-            Capture(
+            CapturePayment(
                 AggregateID(UUID.fromString(paymentID)),
                 amount
             )
@@ -90,7 +90,7 @@ class PaymentsController(
     ): ResponseEntity<Any> {
         logger.info("New refund request, id : $paymentID amount: $amount")
         val result = commandDispatcher.send(
-            Refund(
+            RefundPayment(
                 AggregateID(UUID.fromString(paymentID)),
                 amount
             )

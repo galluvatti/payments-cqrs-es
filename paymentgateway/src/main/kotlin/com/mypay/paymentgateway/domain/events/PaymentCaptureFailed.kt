@@ -4,13 +4,14 @@ import com.mypay.cqrs.core.aggregates.AggregateID
 import com.mypay.cqrs.core.events.DomainEvent
 import com.mypay.paymentgateway.domain.payment.Money
 
-class RefundFailed(
+class PaymentCaptureFailed(
     aggregateID: AggregateID,
     version: Int,
-    val refundAmount: Money
+    private val captureAmount: Money,
+    val failureReason: String?= null
 ) :
     DomainEvent(aggregateID, version) {
     override fun toString(): String {
-        return "RefundFailed(refundAmount=$refundAmount) ${super.toString()}"
+        return "CaptureFailedEvent(captureAmount=$captureAmount, failureReason='$failureReason')"
     }
 }
