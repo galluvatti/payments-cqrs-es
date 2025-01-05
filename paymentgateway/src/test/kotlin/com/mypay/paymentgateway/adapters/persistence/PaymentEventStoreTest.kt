@@ -51,7 +51,7 @@ class PaymentEventStoreTest {
         val authorizedEvent = Authorized(
             aggregateID, 0, Merchant("merchantID"), authorizationAmount, cardHolder, creditCard, order
         )
-        val capturedEvent = Captured(aggregateID, 1, captureAmount, LocalDateTime.now())
+        val capturedEvent = Captured(aggregateID, 1, captureAmount, 1.00, LocalDateTime.now())
         every { repository.findByAggregateId(aggregateID.value.toString()) } returns listOf(
             EventModel(
                 "id1", Date(), aggregateID.toString(), "Payment", 0,
@@ -74,7 +74,7 @@ class PaymentEventStoreTest {
         val authorizedEvent = Authorized(
             aggregateID, 0, Merchant("merchantID"), authorizationAmount, cardHolder, creditCard, order
         )
-        val capturedEvent = Captured(aggregateID, 1, captureAmount, LocalDateTime.now())
+        val capturedEvent = Captured(aggregateID, 1, captureAmount, 1.00, LocalDateTime.now())
         every { repository.findByAggregateId(aggregateID.value.toString()) } returns listOf(
             EventModel(
                 "id1", Date(), aggregateID.toString(), "Payment", 0,
@@ -97,7 +97,7 @@ class PaymentEventStoreTest {
         val authorizedEvent = Authorized(
             aggregateID, 0, Merchant("merchantID"), authorizationAmount, cardHolder, creditCard, order
         )
-        val capturedEvent = Captured(aggregateID, 1, captureAmount, LocalDateTime.now())
+        val capturedEvent = Captured(aggregateID, 1, captureAmount, 1.00, LocalDateTime.now())
         every { repository.findByAggregateId(aggregateID.value.toString()) } returns listOf(
             EventModel(
                 "id1", Date(), aggregateID.toString(), "Payment", 0,

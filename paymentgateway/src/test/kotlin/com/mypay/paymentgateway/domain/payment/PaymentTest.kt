@@ -3,7 +3,6 @@ package com.mypay.paymentgateway.domain.payment
 import com.mypay.cqrs.core.aggregates.AggregateID
 import com.mypay.paymentgateway.domain.errors.*
 import com.mypay.paymentgateway.domain.events.*
-import com.mypay.paymentgateway.domain.services.FraudInvestigator
 import com.mypay.paymentgateway.domain.payment.address.Address
 import com.mypay.paymentgateway.domain.payment.address.City
 import com.mypay.paymentgateway.domain.payment.address.Country
@@ -14,6 +13,8 @@ import com.mypay.paymentgateway.domain.payment.creditcard.CardHolder
 import com.mypay.paymentgateway.domain.payment.creditcard.CreditCard
 import com.mypay.paymentgateway.domain.payment.merchant.Merchant
 import com.mypay.paymentgateway.domain.payment.merchant.Order
+import com.mypay.paymentgateway.domain.services.FraudInvestigator
+import com.mypay.paymentgateway.domain.services.MerchantFees
 import com.mypay.paymentgateway.domain.services.RefundPolicy
 import io.mockk.clearAllMocks
 import io.mockk.every
@@ -46,6 +47,7 @@ class PaymentTest {
     private val merchant = Merchant("merchantID")
 
     private val fraudInvestigator = mockk<FraudInvestigator>()
+    private val merchantFees = mockk<MerchantFees>()
     private val refundPolicy = mockk<RefundPolicy>()
 
     @BeforeEach
@@ -116,9 +118,10 @@ class PaymentTest {
     @Test
     fun `should capture 50 EUR on a payment authorized for 100 EUR`() {
         val aggregateID = AggregateID(UUID.randomUUID())
+        every { merchantFees.calculate(any()) } returns 1.00
 
         val payment = aPaymentAuthorized(aggregateID)
-        val captureResult = payment.capture(captureAmount)
+        val captureResult = payment.capture(captureAmount, merchantFees)
 
         assertThat(captureResult.isOk).isTrue()
         assertThat(payment.getUncommitedChanges())
@@ -130,7 +133,7 @@ class PaymentTest {
         val aggregateID = AggregateID(UUID.randomUUID())
         val payment = aPaymentAuthorized(aggregateID)
 
-        val captureResult = payment.capture(authorizationAmount.amount + 0.01)
+        val captureResult = payment.capture(authorizationAmount.amount + 0.01, merchantFees)
 
         assertThat(captureResult.isErr).isTrue()
         assertThat(captureResult.error).isEqualTo(InsufficientFunds)
@@ -143,7 +146,7 @@ class PaymentTest {
         val aggregateID = AggregateID(UUID.randomUUID())
         val payment = Payment(aggregateID)
 
-        val captureResult = payment.capture(captureAmount)
+        val captureResult = payment.capture(captureAmount, merchantFees)
 
         assertThat(captureResult.isErr).isTrue()
         assertThat(captureResult.error).isEqualTo(CaptureNotAllowed)
@@ -155,7 +158,7 @@ class PaymentTest {
         val aggregateID = AggregateID(UUID.randomUUID())
         val payment = aPaymentCaptured(aggregateID)
 
-        val captureResult = payment.capture(captureAmount)
+        val captureResult = payment.capture(captureAmount, merchantFees)
 
         assertThat(captureResult.isErr).isTrue()
         assertThat(captureResult.error).isEqualTo(CaptureNotAllowed)
@@ -167,13 +170,12 @@ class PaymentTest {
         val aggregateID = AggregateID(UUID.randomUUID())
         val payment = aPaymentRefunded(aggregateID)
 
-        val captureResult = payment.capture(captureAmount)
+        val captureResult = payment.capture(captureAmount, merchantFees)
 
         assertThat(captureResult.isErr).isTrue()
         assertThat(captureResult.error).isEqualTo(CaptureNotAllowed)
         assertThat(payment.getUncommitedChanges()).hasSize(0)
     }
-
 
     @Test
     fun `should refund 40 EUR on a payment captured for 50 EUR`() {
@@ -244,9 +246,10 @@ class PaymentTest {
     @Test
     fun `should increase version when changes are marked as committed`() {
         val aggregateID = AggregateID(UUID.randomUUID())
-        val payment = aPaymentAuthorized(aggregateID)
+        every { merchantFees.calculate(any()) } returns 1.00
 
-        payment.capture(captureAmount)
+        val payment = aPaymentAuthorized(aggregateID)
+        payment.capture(captureAmount, merchantFees)
 
         assertThat(payment.getUncommitedChanges()).hasSize(1)
         val expectedVersion = payment.version
@@ -290,6 +293,7 @@ class PaymentTest {
                     aggregateID,
                     1,
                     Money(authorizationAmount.currency, captureAmount),
+                    1.00,
                     LocalDateTime.now()
                 )
             )
@@ -314,6 +318,7 @@ class PaymentTest {
                     aggregateID,
                     1,
                     Money(authorizationAmount.currency, captureAmount),
+                    1.00,
                     LocalDateTime.now()
                 ),
                 Refunded(

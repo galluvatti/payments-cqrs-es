@@ -9,6 +9,7 @@ class Captured(
     aggregateID: AggregateID,
     version: Int,
     val captureAmount: Money,
+    val fees: Double,
     val captureDate: LocalDateTime
 ) :
     DomainEvent(aggregateID, version) {

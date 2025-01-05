@@ -89,6 +89,7 @@ class PaymentEventSourcingHandlerTest {
                 aggregateID,
                 1,
                 captureAmount,
+                1.00,
                 LocalDateTime.now()
             )
         )

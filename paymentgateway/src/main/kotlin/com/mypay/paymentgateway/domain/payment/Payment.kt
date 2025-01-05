@@ -12,6 +12,7 @@ import com.mypay.paymentgateway.domain.payment.creditcard.CreditCard
 import com.mypay.paymentgateway.domain.payment.merchant.Merchant
 import com.mypay.paymentgateway.domain.payment.merchant.Order
 import com.mypay.paymentgateway.domain.services.FraudInvestigator
+import com.mypay.paymentgateway.domain.services.MerchantFees
 import com.mypay.paymentgateway.domain.services.RefundPolicy
 import org.slf4j.LoggerFactory
 import java.time.LocalDateTime
@@ -21,6 +22,7 @@ class Payment(id: AggregateID) : AggregateRoot(id) {
     private lateinit var authorizedAmount: Money
     private lateinit var capturedAmount: Money
     private lateinit var refundedAmount: Money
+    private lateinit var merchantFees: Money
     private var status: Status = Status.INITIATED
     private lateinit var captureDate: LocalDateTime
 
@@ -67,7 +69,7 @@ class Payment(id: AggregateID) : AggregateRoot(id) {
         }
     }
 
-    fun capture(amount: Double): Result<Unit, DomainError> {
+    fun capture(amount: Double, merchantFees: MerchantFees): Result<Unit, DomainError> {
         if (status != Status.AUTHORIZED) return Err(CaptureNotAllowed)
         return if (amount > this.authorizedAmount.amount) {
             logger.error("Capture not allowed for payment $id: the requested amount is greater than authorized amount.")
@@ -80,11 +82,13 @@ class Payment(id: AggregateID) : AggregateRoot(id) {
             )
             Err(InsufficientFunds)
         } else {
+            val fees = merchantFees.calculate(amount)
             raiseEvent(
                 Captured(
                     this.id,
                     this.version,
                     Money(this.authorizedAmount.currency, amount),
+                    fees,
                     LocalDateTime.now(),
                 )
             )
@@ -139,6 +143,7 @@ class Payment(id: AggregateID) : AggregateRoot(id) {
 
     private fun apply(event: Captured) {
         this.capturedAmount = event.captureAmount
+        this.merchantFees = Money(capturedAmount.currency, event.fees)
         this.status = Status.CAPTURED
         this.captureDate = event.captureDate
     }
