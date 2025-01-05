@@ -4,19 +4,25 @@ import com.mypay.cqrs.core.aggregates.AggregateID
 import com.mypay.paymentgateway.domain.errors.*
 import com.mypay.paymentgateway.domain.events.*
 import com.mypay.paymentgateway.domain.services.FraudInvestigator
-import com.mypay.paymentgateway.domain.valueobjects.*
-import com.mypay.paymentgateway.domain.valueobjects.address.Address
-import com.mypay.paymentgateway.domain.valueobjects.address.City
-import com.mypay.paymentgateway.domain.valueobjects.address.Country
-import com.mypay.paymentgateway.domain.valueobjects.billing.BillingDetails
-import com.mypay.paymentgateway.domain.valueobjects.creditcard.CardHolder
-import com.mypay.paymentgateway.domain.valueobjects.creditcard.CreditCard
+import com.mypay.paymentgateway.domain.payment.address.Address
+import com.mypay.paymentgateway.domain.payment.address.City
+import com.mypay.paymentgateway.domain.payment.address.Country
+import com.mypay.paymentgateway.domain.payment.billing.BillingDetails
+import com.mypay.paymentgateway.domain.payment.billing.Email
+import com.mypay.paymentgateway.domain.payment.billing.FullName
+import com.mypay.paymentgateway.domain.payment.creditcard.CardHolder
+import com.mypay.paymentgateway.domain.payment.creditcard.CreditCard
+import com.mypay.paymentgateway.domain.payment.merchant.Merchant
+import com.mypay.paymentgateway.domain.payment.merchant.Order
+import com.mypay.paymentgateway.domain.services.RefundPolicy
 import io.mockk.clearAllMocks
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.time.LocalDateTime
 import java.util.*
 
 class PaymentTest {
@@ -25,7 +31,7 @@ class PaymentTest {
     private val captureAmount = 50.0
     private val refundAmount = 40.0
     private val cardHolder = CardHolder(
-        AnagraphicDetails("John", "Doe"),
+        FullName("John", "Doe"),
         BillingDetails(Country("IT"), City("Milan"), Address("Via di Casa Mia")),
         Email("itsme@mail.com")
     )
@@ -40,6 +46,7 @@ class PaymentTest {
     private val merchant = Merchant("merchantID")
 
     private val fraudInvestigator = mockk<FraudInvestigator>()
+    private val refundPolicy = mockk<RefundPolicy>()
 
     @BeforeEach
     fun setUp() {
@@ -171,9 +178,10 @@ class PaymentTest {
     @Test
     fun `should refund 40 EUR on a payment captured for 50 EUR`() {
         val aggregateID = AggregateID(UUID.randomUUID())
+        every { refundPolicy.isRefundable(any()) } returns true
 
         val payment = aPaymentCaptured(aggregateID)
-        val refundResult = payment.refund(refundAmount)
+        val refundResult = payment.refund(refundAmount, refundPolicy)
 
         assertThat(refundResult.isOk).isTrue()
         assertThat(payment.getUncommitedChanges())
@@ -185,7 +193,7 @@ class PaymentTest {
         val aggregateID = AggregateID(UUID.randomUUID())
         val payment = aPaymentAuthorized(aggregateID)
 
-        val refundResult = payment.refund(refundAmount)
+        val refundResult = payment.refund(refundAmount, refundPolicy)
 
         assertThat(refundResult.isErr).isTrue()
         assertThat(refundResult.error).isEqualTo(RefundNotAllowed)
@@ -197,7 +205,7 @@ class PaymentTest {
         val aggregateID = AggregateID(UUID.randomUUID())
         val payment = aPaymentRefunded(aggregateID)
 
-        val result = payment.refund(refundAmount)
+        val result = payment.refund(refundAmount, refundPolicy)
 
         assertThat(result.isErr).isTrue()
         assertThat(result.error).isEqualTo(RefundNotAllowed)
@@ -209,12 +217,28 @@ class PaymentTest {
         val aggregateID = AggregateID(UUID.randomUUID())
         val payment = aPaymentCaptured(aggregateID)
 
-        val refundResult = payment.refund(captureAmount + 0.01)
+        val refundResult = payment.refund(captureAmount + 0.01, refundPolicy)
 
         assertThat(refundResult.isErr).isTrue()
         assertThat(refundResult.error).isEqualTo(RefundNotAllowed)
         assertThat(payment.getUncommitedChanges())
             .hasOnlyElementsOfType(RefundFailed::class.java).hasSize(1)
+    }
+
+    @Test
+    fun `should not allow refund if company policy is not matched`() {
+        val aggregateID = AggregateID(UUID.randomUUID())
+        every { refundPolicy.isRefundable(any()) } returns false
+
+        val payment = aPaymentCaptured(aggregateID)
+        val refundResult = payment.refund(refundAmount, refundPolicy)
+
+        assertThat(refundResult.isErr).isTrue()
+        assertThat(refundResult.error).isEqualTo(RefundNotAllowed)
+        assertThat(payment.getUncommitedChanges())
+            .hasOnlyElementsOfType(RefundFailed::class.java).hasSize(1)
+
+        verify { refundPolicy.isRefundable(any()) }
     }
 
     @Test
@@ -265,7 +289,8 @@ class PaymentTest {
                 Captured(
                     aggregateID,
                     1,
-                    Money(authorizationAmount.currency, captureAmount)
+                    Money(authorizationAmount.currency, captureAmount),
+                    LocalDateTime.now()
                 )
             )
         )
@@ -288,7 +313,8 @@ class PaymentTest {
                 Captured(
                     aggregateID,
                     1,
-                    Money(authorizationAmount.currency, captureAmount)
+                    Money(authorizationAmount.currency, captureAmount),
+                    LocalDateTime.now()
                 ),
                 Refunded(
                     aggregateID,

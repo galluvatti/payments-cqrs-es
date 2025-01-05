@@ -11,25 +11,22 @@ This is a **Command API** application built using the following technology stack
 - **Gradle** (build system)
 
 The application interacts with external services like Apache Kafka, MongoDB, MySQL, and Zookeeper, which are orchestrated using Docker Compose.
-
+See README.md in the root of the repository
 ---
 
-## Features
+## Use Cases
 
-- Implements a **CQRS (Command Query Responsibility Segregation)** architecture.
-- Uses **Event Sourcing** to persist events in MongoDB.
-- Publishes domain events to **Apache Kafka** for asynchronous communication.
-- Provides REST APIs for handling commands.
+**Use Case 1**
 
----
+A merchant wants to authorize a customer credit card for a specific amount and currency. The system must perform some basic fraud checks (no need to call external services): customer email or pan must not be presents in our blacklist. The merchant who want to perform a payment must also provide cardholder data and customer order basic info such as the id of the order and a short description of the good that is being paid. We want to track both successfull authorized payment and failed ones.
 
-## Prerequisites
+**Use Case 2**
 
-Before running the application, ensure you have the following installed:
+Given an authorized payment, a merchant wants to capture a specific amount (this is usually the case for physical goods, when merchant authorize the amount on order confirmation and then capture the amount when the good is shipped from warehouse). The amount to be captured can be equal or less than the authorized amount. This is also the moment where we calculate payment fees for the merchant. For simplicity we can consider that we individually negotiated, with each merchant, a fixed % fee.
 
-1. **Docker** and **Docker Compose** (to run external services).
-2. **JDK 17** (for running the application).
-3. **Gradle** (for building the project).
+**Use Case 3** 
+
+Given a captured payment, a merchant wants to refund a customer for a specific amount. The refund amount can be equal or less than the captured amount. By company policy, refund is possible only if no more than 30 days have passed from the capture.
 
 ---
 
@@ -38,7 +35,7 @@ Before running the application, ensure you have the following installed:
 
 ### 1. Start External Services
 
-Use the provided `docker-compose.yml` file to start the required services:
+Use the provided `docker-compose.yml` file in the root to start the required services:
 
 ```sh
 docker-compose up -d
@@ -70,19 +67,5 @@ Please use the Postman collection included in this codebase
 
 
 ---
-
-## External Services Overview
-
-### Kafka + Zookeeper
-Kafka is used as an event bus for publishing domain events. Zookeeper is required for managing Kafka brokers.
-
-### MongoDB
-MongoDB serves as the event store for persisting domain events and snapshots.
-
-### MySQL
-MySQL is used as the read database in the CQRS architecture to store query-side projections.
-
----
-
 
 

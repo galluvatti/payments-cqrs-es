@@ -11,7 +11,6 @@ import com.mypay.cqrs.core.infrastructure.EventStore
 import com.mypay.paymentgateway.domain.payment.Payment
 import com.mypay.paymentgateway.domain.errors.DomainError
 import com.mypay.paymentgateway.domain.errors.OptimisticConcurrencyViolation
-import com.mypay.paymentgateway.domain.ports.EventStoreRepository
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Repository

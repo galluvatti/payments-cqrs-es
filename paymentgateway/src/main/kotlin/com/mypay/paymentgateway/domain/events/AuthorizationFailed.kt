@@ -2,10 +2,10 @@ package com.mypay.paymentgateway.domain.events
 
 import com.mypay.cqrs.core.aggregates.AggregateID
 import com.mypay.cqrs.core.events.DomainEvent
-import com.mypay.paymentgateway.domain.valueobjects.Money
-import com.mypay.paymentgateway.domain.valueobjects.Order
-import com.mypay.paymentgateway.domain.valueobjects.creditcard.CardHolder
-import com.mypay.paymentgateway.domain.valueobjects.creditcard.CreditCard
+import com.mypay.paymentgateway.domain.payment.Money
+import com.mypay.paymentgateway.domain.payment.merchant.Order
+import com.mypay.paymentgateway.domain.payment.creditcard.CardHolder
+import com.mypay.paymentgateway.domain.payment.creditcard.CreditCard
 
 class AuthorizationFailed(
     aggregateID: AggregateID,

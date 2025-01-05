@@ -7,13 +7,17 @@ import com.mypay.paymentgateway.adapters.rest.dto.AuthorizationDto
 import com.mypay.paymentgateway.application.commands.Authorize
 import com.mypay.paymentgateway.application.commands.Capture
 import com.mypay.paymentgateway.application.commands.Refund
-import com.mypay.paymentgateway.domain.valueobjects.*
-import com.mypay.paymentgateway.domain.valueobjects.address.Address
-import com.mypay.paymentgateway.domain.valueobjects.address.City
-import com.mypay.paymentgateway.domain.valueobjects.address.Country
-import com.mypay.paymentgateway.domain.valueobjects.billing.BillingDetails
-import com.mypay.paymentgateway.domain.valueobjects.creditcard.CardHolder
-import com.mypay.paymentgateway.domain.valueobjects.creditcard.CreditCard
+import com.mypay.paymentgateway.domain.payment.Money
+import com.mypay.paymentgateway.domain.payment.address.Address
+import com.mypay.paymentgateway.domain.payment.address.City
+import com.mypay.paymentgateway.domain.payment.address.Country
+import com.mypay.paymentgateway.domain.payment.billing.BillingDetails
+import com.mypay.paymentgateway.domain.payment.billing.Email
+import com.mypay.paymentgateway.domain.payment.billing.FullName
+import com.mypay.paymentgateway.domain.payment.creditcard.CardHolder
+import com.mypay.paymentgateway.domain.payment.creditcard.CreditCard
+import com.mypay.paymentgateway.domain.payment.merchant.Merchant
+import com.mypay.paymentgateway.domain.payment.merchant.Order
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
@@ -38,7 +42,7 @@ class PaymentsController(
                 AggregateID(paymentID),
                 Money(Currency.getInstance(request.currency), request.amount),
                 CardHolder(
-                    AnagraphicDetails(request.cardHolderName, request.cardHolderSurname),
+                    FullName(request.cardHolderName, request.cardHolderSurname),
                     BillingDetails(
                         Country(request.cardHolderCountry),
                         City(request.cardHolderCity),

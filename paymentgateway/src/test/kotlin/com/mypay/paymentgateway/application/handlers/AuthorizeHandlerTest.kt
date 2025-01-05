@@ -7,15 +7,19 @@ import com.mypay.cqrs.core.aggregates.AggregateID
 import com.mypay.cqrs.core.handlers.EventSourcingHandler
 import com.mypay.paymentgateway.application.commands.Authorize
 import com.mypay.paymentgateway.domain.errors.OptimisticConcurrencyViolation
+import com.mypay.paymentgateway.domain.payment.Money
 import com.mypay.paymentgateway.domain.payment.Payment
 import com.mypay.paymentgateway.domain.services.InMemoryBlacklistFraudInvestigator
-import com.mypay.paymentgateway.domain.valueobjects.*
-import com.mypay.paymentgateway.domain.valueobjects.address.Address
-import com.mypay.paymentgateway.domain.valueobjects.address.City
-import com.mypay.paymentgateway.domain.valueobjects.address.Country
-import com.mypay.paymentgateway.domain.valueobjects.billing.BillingDetails
-import com.mypay.paymentgateway.domain.valueobjects.creditcard.CardHolder
-import com.mypay.paymentgateway.domain.valueobjects.creditcard.CreditCard
+import com.mypay.paymentgateway.domain.payment.address.Address
+import com.mypay.paymentgateway.domain.payment.address.City
+import com.mypay.paymentgateway.domain.payment.address.Country
+import com.mypay.paymentgateway.domain.payment.billing.BillingDetails
+import com.mypay.paymentgateway.domain.payment.billing.Email
+import com.mypay.paymentgateway.domain.payment.billing.FullName
+import com.mypay.paymentgateway.domain.payment.creditcard.CardHolder
+import com.mypay.paymentgateway.domain.payment.creditcard.CreditCard
+import com.mypay.paymentgateway.domain.payment.merchant.Merchant
+import com.mypay.paymentgateway.domain.payment.merchant.Order
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -40,7 +44,7 @@ class AuthorizeHandlerTest {
                 AggregateID(UUID.randomUUID()),
                 Money(Currency.getInstance("EUR"), 100.00),
                 CardHolder(
-                    AnagraphicDetails("name", "surname"),
+                    FullName("name", "surname"),
                     BillingDetails(
                         Country("IT"),
                         City("Milan"),
@@ -80,7 +84,7 @@ class AuthorizeHandlerTest {
                 AggregateID(UUID.randomUUID()),
                 Money(Currency.getInstance("EUR"), 100.00),
                 CardHolder(
-                    AnagraphicDetails("name", "surname"),
+                    FullName("name", "surname"),
                     BillingDetails(
                         Country("IT"),
                         City("Milan"),
@@ -119,7 +123,7 @@ class AuthorizeHandlerTest {
                 AggregateID(UUID.randomUUID()),
                 Money(Currency.getInstance("EUR"), 100.00),
                 CardHolder(
-                    AnagraphicDetails("name", "surname"),
+                    FullName("name", "surname"),
                     BillingDetails(
                         Country("IT"),
                         City("Milan"),

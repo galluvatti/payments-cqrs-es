@@ -5,11 +5,14 @@ import org.springframework.http.HttpStatusCode
 
 sealed class DomainError(val httpStatusCode: HttpStatusCode, val description: String)
 
-data object SuspectFraud: DomainError(HttpStatus.FORBIDDEN, "Suspect fraud detected")
-data object InsufficientFunds: DomainError(HttpStatus.BAD_REQUEST, "Insufficient funds on card")
-data object PaymentAlreadyAuthorized: DomainError(HttpStatus.FORBIDDEN, "Payment can't be authorized twice")
-data object CaptureNotAllowed: DomainError(HttpStatus.FORBIDDEN, "Payment can't be captured")
-data object RefundNotAllowed: DomainError(HttpStatus.FORBIDDEN, "Payment can't be refunded")
-data object RefundWindowExpired: DomainError(HttpStatus.FORBIDDEN, "Payment can't be refunded because too much time passed from capture")
-data object OptimisticConcurrencyViolation: DomainError(HttpStatus.CONFLICT, "Optimistic concurrency violation. Trying to update a older version of the aggregate.")
-data object CommandNotFound: DomainError(HttpStatus.BAD_REQUEST, "Could not find a handler for the Command requested ")
+data object SuspectFraud : DomainError(HttpStatus.FORBIDDEN, "Suspect fraud detected")
+data object InsufficientFunds : DomainError(HttpStatus.BAD_REQUEST, "Insufficient funds on card")
+data object PaymentAlreadyAuthorized : DomainError(HttpStatus.FORBIDDEN, "Payment can't be authorized twice")
+data object CaptureNotAllowed : DomainError(HttpStatus.FORBIDDEN, "Payment can't be captured")
+data object RefundNotAllowed : DomainError(HttpStatus.FORBIDDEN, "Payment can't be refunded")
+data object OptimisticConcurrencyViolation : DomainError(
+    HttpStatus.CONFLICT,
+    "Optimistic concurrency violation. Trying to update a older version of the aggregate."
+)
+
+data object CommandNotFound : DomainError(HttpStatus.BAD_REQUEST, "Could not find a handler for the Command requested ")

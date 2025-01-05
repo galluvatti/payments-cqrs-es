@@ -1,4 +1,4 @@
-package com.mypay.paymentgateway.domain.ports
+package com.mypay.paymentgateway.adapters.persistence
 
 import com.mypay.cqrs.core.aggregates.AggregateID
 import com.mypay.cqrs.core.events.EventModel

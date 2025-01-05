@@ -1,17 +1,20 @@
 package com.mypay.paymentgateway.domain.payment
 
-import com.github.michaelbull.result.*
+import com.github.michaelbull.result.Err
+import com.github.michaelbull.result.Ok
+import com.github.michaelbull.result.Result
 import com.mypay.cqrs.core.aggregates.AggregateID
 import com.mypay.cqrs.core.aggregates.AggregateRoot
 import com.mypay.paymentgateway.domain.errors.*
 import com.mypay.paymentgateway.domain.events.*
+import com.mypay.paymentgateway.domain.payment.creditcard.CardHolder
+import com.mypay.paymentgateway.domain.payment.creditcard.CreditCard
+import com.mypay.paymentgateway.domain.payment.merchant.Merchant
+import com.mypay.paymentgateway.domain.payment.merchant.Order
 import com.mypay.paymentgateway.domain.services.FraudInvestigator
-import com.mypay.paymentgateway.domain.valueobjects.Merchant
-import com.mypay.paymentgateway.domain.valueobjects.Money
-import com.mypay.paymentgateway.domain.valueobjects.Order
-import com.mypay.paymentgateway.domain.valueobjects.creditcard.CardHolder
-import com.mypay.paymentgateway.domain.valueobjects.creditcard.CreditCard
+import com.mypay.paymentgateway.domain.services.RefundPolicy
 import org.slf4j.LoggerFactory
+import java.time.LocalDateTime
 
 class Payment(id: AggregateID) : AggregateRoot(id) {
     private val logger = LoggerFactory.getLogger(Payment::class.java)
@@ -19,6 +22,7 @@ class Payment(id: AggregateID) : AggregateRoot(id) {
     private lateinit var capturedAmount: Money
     private lateinit var refundedAmount: Money
     private var status: Status = Status.INITIATED
+    private lateinit var captureDate: LocalDateTime
 
     enum class Status {
         INITIATED, FRAUD, AUTHORIZED, CAPTURED, REFUNDED
@@ -32,7 +36,7 @@ class Payment(id: AggregateID) : AggregateRoot(id) {
         order: Order,
         fraudInvestigator: FraudInvestigator
     ): Result<Unit, DomainError> {
-        if(status != Status.INITIATED) return Err(PaymentAlreadyAuthorized)
+        if (status != Status.INITIATED) return Err(PaymentAlreadyAuthorized)
         val fraudDetected = fraudInvestigator.isFraud(cardHolder, creditCard)
         return if (fraudDetected) {
             raiseEvent(
@@ -81,6 +85,7 @@ class Payment(id: AggregateID) : AggregateRoot(id) {
                     this.id,
                     this.version,
                     Money(this.authorizedAmount.currency, amount),
+                    LocalDateTime.now(),
                 )
             )
             Ok(Unit)
@@ -89,9 +94,9 @@ class Payment(id: AggregateID) : AggregateRoot(id) {
 
     }
 
-    fun refund(amount: Double): Result<Unit, DomainError> {
+    fun refund(amount: Double, refundPolicy: RefundPolicy): Result<Unit, DomainError> {
         if (status != Status.CAPTURED) return Err(RefundNotAllowed)
-        return if (amount > this.capturedAmount.amount) {
+        if (amount > this.capturedAmount.amount) {
             logger.error("Refund not allowed for payment $id: the requested amount is greater than captured amount.")
             raiseEvent(
                 RefundFailed(
@@ -100,17 +105,27 @@ class Payment(id: AggregateID) : AggregateRoot(id) {
                     Money(this.authorizedAmount.currency, amount),
                 )
             )
-            Err(RefundNotAllowed)
-        } else {
+            return Err(RefundNotAllowed)
+        }
+        if (!refundPolicy.isRefundable(this)) {
+            logger.error("Refund not allowed for payment $id: the company policy is not matched.")
             raiseEvent(
-                Refunded(
+                RefundFailed(
                     this.id,
                     this.version,
                     Money(this.authorizedAmount.currency, amount),
                 )
             )
-            Ok(Unit)
+            return Err(RefundNotAllowed)
         }
+        raiseEvent(
+            Refunded(
+                this.id,
+                this.version,
+                Money(this.authorizedAmount.currency, amount),
+            )
+        )
+        return Ok(Unit)
     }
 
     private fun apply(event: FraudDetected) {
@@ -122,10 +137,10 @@ class Payment(id: AggregateID) : AggregateRoot(id) {
         this.status = Status.AUTHORIZED
     }
 
-
     private fun apply(event: Captured) {
         this.capturedAmount = event.captureAmount
         this.status = Status.CAPTURED
+        this.captureDate = event.captureDate
     }
 
     private fun apply(event: CaptureFailed) {
@@ -142,5 +157,6 @@ class Payment(id: AggregateID) : AggregateRoot(id) {
     }
 
     fun getStatus() = status
+    fun getCaptureDate() = captureDate
 
 }

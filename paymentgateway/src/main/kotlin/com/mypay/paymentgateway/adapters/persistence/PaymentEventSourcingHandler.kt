@@ -1,4 +1,4 @@
-package com.mypay.paymentgateway.infrastructure
+package com.mypay.paymentgateway.adapters.persistence
 
 import com.github.michaelbull.result.*
 import com.mypay.cqrs.core.aggregates.AggregateID

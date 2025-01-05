@@ -10,8 +10,9 @@ import com.mypay.paymentgateway.application.handlers.CaptureHandler
 import com.mypay.paymentgateway.application.handlers.RefundHandler
 import com.mypay.paymentgateway.domain.payment.Payment
 import com.mypay.paymentgateway.domain.services.InMemoryBlacklistFraudInvestigator
-import com.mypay.paymentgateway.domain.valueobjects.Email
-import com.mypay.paymentgateway.domain.valueobjects.creditcard.CreditCard
+import com.mypay.paymentgateway.domain.payment.billing.Email
+import com.mypay.paymentgateway.domain.payment.creditcard.CreditCard
+import com.mypay.paymentgateway.domain.services.RefundPolicy
 import jakarta.annotation.PostConstruct
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.SpringBootApplication
@@ -23,6 +24,8 @@ class PaymentGatewayApplication {
     private lateinit var commandDispacther: CommandDispatcher
     @Autowired
     private lateinit var eventSourcingHandler: EventSourcingHandler<Payment>
+    @Autowired
+    private lateinit var refundPolicy: RefundPolicy
 
     @PostConstruct
     fun registerCommands() {
@@ -39,7 +42,7 @@ class PaymentGatewayApplication {
             Capture::class.java, CaptureHandler(eventSourcingHandler)
         )
         commandDispacther.registerHandler(
-            Refund::class.java, RefundHandler(eventSourcingHandler)
+            Refund::class.java, RefundHandler(eventSourcingHandler, refundPolicy)
         )
     }
 }

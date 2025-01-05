@@ -1,4 +1,4 @@
-package com.mypay.paymentgateway.domain.valueobjects
+package com.mypay.paymentgateway.domain.payment
 
 import java.util.Currency
 

@@ -2,7 +2,7 @@ package com.mypay.paymentgateway.domain.events
 
 import com.mypay.cqrs.core.aggregates.AggregateID
 import com.mypay.cqrs.core.events.DomainEvent
-import com.mypay.paymentgateway.domain.valueobjects.Money
+import com.mypay.paymentgateway.domain.payment.Money
 
 class RefundFailed(
     aggregateID: AggregateID,

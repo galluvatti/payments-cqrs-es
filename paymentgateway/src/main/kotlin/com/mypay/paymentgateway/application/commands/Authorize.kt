@@ -2,11 +2,11 @@ package com.mypay.paymentgateway.application.commands
 
 import com.mypay.cqrs.core.aggregates.AggregateID
 import com.mypay.cqrs.core.commands.Command
-import com.mypay.paymentgateway.domain.valueobjects.Merchant
-import com.mypay.paymentgateway.domain.valueobjects.Money
-import com.mypay.paymentgateway.domain.valueobjects.Order
-import com.mypay.paymentgateway.domain.valueobjects.creditcard.CardHolder
-import com.mypay.paymentgateway.domain.valueobjects.creditcard.CreditCard
+import com.mypay.paymentgateway.domain.payment.merchant.Merchant
+import com.mypay.paymentgateway.domain.payment.Money
+import com.mypay.paymentgateway.domain.payment.merchant.Order
+import com.mypay.paymentgateway.domain.payment.creditcard.CardHolder
+import com.mypay.paymentgateway.domain.payment.creditcard.CreditCard
 
 data class Authorize(
     val merchant: Merchant,

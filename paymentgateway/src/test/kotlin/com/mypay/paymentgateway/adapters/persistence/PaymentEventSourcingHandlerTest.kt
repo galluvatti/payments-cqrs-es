@@ -1,4 +1,4 @@
-package com.mypay.paymentgateway.infrastructure
+package com.mypay.paymentgateway.adapters.persistence
 
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
@@ -7,27 +7,32 @@ import com.mypay.cqrs.core.infrastructure.EventStore
 import com.mypay.paymentgateway.domain.errors.OptimisticConcurrencyViolation
 import com.mypay.paymentgateway.domain.events.Authorized
 import com.mypay.paymentgateway.domain.events.Captured
+import com.mypay.paymentgateway.domain.payment.Money
 import com.mypay.paymentgateway.domain.payment.Payment
 import com.mypay.paymentgateway.domain.services.FraudInvestigator
-import com.mypay.paymentgateway.domain.valueobjects.*
-import com.mypay.paymentgateway.domain.valueobjects.address.Address
-import com.mypay.paymentgateway.domain.valueobjects.address.City
-import com.mypay.paymentgateway.domain.valueobjects.address.Country
-import com.mypay.paymentgateway.domain.valueobjects.billing.BillingDetails
-import com.mypay.paymentgateway.domain.valueobjects.creditcard.CardHolder
-import com.mypay.paymentgateway.domain.valueobjects.creditcard.CreditCard
+import com.mypay.paymentgateway.domain.payment.address.Address
+import com.mypay.paymentgateway.domain.payment.address.City
+import com.mypay.paymentgateway.domain.payment.address.Country
+import com.mypay.paymentgateway.domain.payment.billing.BillingDetails
+import com.mypay.paymentgateway.domain.payment.billing.Email
+import com.mypay.paymentgateway.domain.payment.billing.FullName
+import com.mypay.paymentgateway.domain.payment.creditcard.CardHolder
+import com.mypay.paymentgateway.domain.payment.creditcard.CreditCard
+import com.mypay.paymentgateway.domain.payment.merchant.Merchant
+import com.mypay.paymentgateway.domain.payment.merchant.Order
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import java.time.LocalDateTime
 import java.util.*
 
 class PaymentEventSourcingHandlerTest {
     private val authorizationAmount = Money(Currency.getInstance("EUR"), 100.0)
     private val captureAmount = Money(Currency.getInstance("EUR"), 50.0)
     private val cardHolder = CardHolder(
-        AnagraphicDetails("John", "Doe"),
+        FullName("John", "Doe"),
         BillingDetails(Country("IT"), City("Milan"), Address("Via di Casa Mia")),
         Email("itsme@mail.com")
     )
@@ -83,7 +88,8 @@ class PaymentEventSourcingHandlerTest {
             Captured(
                 aggregateID,
                 1,
-                captureAmount
+                captureAmount,
+                LocalDateTime.now()
             )
         )
         val payment = PaymentEventSourcingHandler(eventStore).getById(aggregateID)

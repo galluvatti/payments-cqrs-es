@@ -1,8 +1,8 @@
 package com.mypay.paymentgateway.domain.services
 
-import com.mypay.paymentgateway.domain.valueobjects.Email
-import com.mypay.paymentgateway.domain.valueobjects.creditcard.CardHolder
-import com.mypay.paymentgateway.domain.valueobjects.creditcard.CreditCard
+import com.mypay.paymentgateway.domain.payment.billing.Email
+import com.mypay.paymentgateway.domain.payment.creditcard.CardHolder
+import com.mypay.paymentgateway.domain.payment.creditcard.CreditCard
 import org.springframework.stereotype.Service
 
 @Service

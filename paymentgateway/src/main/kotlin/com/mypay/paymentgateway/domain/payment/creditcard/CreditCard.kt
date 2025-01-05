@@ -1,4 +1,4 @@
-package com.mypay.paymentgateway.domain.valueobjects.creditcard
+package com.mypay.paymentgateway.domain.payment.creditcard
 
 data class CreditCard(
     val pan: Pan,

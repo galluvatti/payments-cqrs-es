@@ -6,26 +6,30 @@ import com.mypay.cqrs.core.infrastructure.EventProducer
 import com.mypay.paymentgateway.domain.events.Authorized
 import com.mypay.paymentgateway.domain.events.Captured
 import com.mypay.paymentgateway.domain.errors.OptimisticConcurrencyViolation
-import com.mypay.paymentgateway.domain.ports.EventStoreRepository
-import com.mypay.paymentgateway.domain.valueobjects.*
-import com.mypay.paymentgateway.domain.valueobjects.address.Address
-import com.mypay.paymentgateway.domain.valueobjects.address.City
-import com.mypay.paymentgateway.domain.valueobjects.address.Country
-import com.mypay.paymentgateway.domain.valueobjects.billing.BillingDetails
-import com.mypay.paymentgateway.domain.valueobjects.creditcard.CardHolder
-import com.mypay.paymentgateway.domain.valueobjects.creditcard.CreditCard
+import com.mypay.paymentgateway.domain.payment.Money
+import com.mypay.paymentgateway.domain.payment.address.Address
+import com.mypay.paymentgateway.domain.payment.address.City
+import com.mypay.paymentgateway.domain.payment.address.Country
+import com.mypay.paymentgateway.domain.payment.billing.BillingDetails
+import com.mypay.paymentgateway.domain.payment.billing.Email
+import com.mypay.paymentgateway.domain.payment.billing.FullName
+import com.mypay.paymentgateway.domain.payment.creditcard.CardHolder
+import com.mypay.paymentgateway.domain.payment.creditcard.CreditCard
+import com.mypay.paymentgateway.domain.payment.merchant.Merchant
+import com.mypay.paymentgateway.domain.payment.merchant.Order
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import java.time.LocalDateTime
 import java.util.*
 
 class PaymentEventStoreTest {
     private val authorizationAmount = Money(Currency.getInstance("EUR"), 100.0)
     private val captureAmount = Money(Currency.getInstance("EUR"), 50.0)
     private val cardHolder = CardHolder(
-        AnagraphicDetails("John", "Doe"),
+        FullName("John", "Doe"),
         BillingDetails(Country("IT"), City("Milan"), Address("Via di Casa Mia")),
         Email("itsme@mail.com")
     )
@@ -47,7 +51,7 @@ class PaymentEventStoreTest {
         val authorizedEvent = Authorized(
             aggregateID, 0, Merchant("merchantID"), authorizationAmount, cardHolder, creditCard, order
         )
-        val capturedEvent = Captured(aggregateID, 1, captureAmount)
+        val capturedEvent = Captured(aggregateID, 1, captureAmount, LocalDateTime.now())
         every { repository.findByAggregateId(aggregateID.value.toString()) } returns listOf(
             EventModel(
                 "id1", Date(), aggregateID.toString(), "Payment", 0,
@@ -70,7 +74,7 @@ class PaymentEventStoreTest {
         val authorizedEvent = Authorized(
             aggregateID, 0, Merchant("merchantID"), authorizationAmount, cardHolder, creditCard, order
         )
-        val capturedEvent = Captured(aggregateID, 1, captureAmount)
+        val capturedEvent = Captured(aggregateID, 1, captureAmount, LocalDateTime.now())
         every { repository.findByAggregateId(aggregateID.value.toString()) } returns listOf(
             EventModel(
                 "id1", Date(), aggregateID.toString(), "Payment", 0,
@@ -93,7 +97,7 @@ class PaymentEventStoreTest {
         val authorizedEvent = Authorized(
             aggregateID, 0, Merchant("merchantID"), authorizationAmount, cardHolder, creditCard, order
         )
-        val capturedEvent = Captured(aggregateID, 1, captureAmount)
+        val capturedEvent = Captured(aggregateID, 1, captureAmount, LocalDateTime.now())
         every { repository.findByAggregateId(aggregateID.value.toString()) } returns listOf(
             EventModel(
                 "id1", Date(), aggregateID.toString(), "Payment", 0,
