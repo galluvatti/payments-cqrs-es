@@ -1,6 +1,6 @@
 package com.mypay.paymentgateway
 
-import com.mypay.cqrs.core.handlers.EventSourcingHandler
+import com.mypay.cqrs.core.handlers.EventSourcingRepository
 import com.mypay.cqrs.core.infrastructure.CommandDispatcher
 import com.mypay.paymentgateway.application.commands.AuthorizePayment
 import com.mypay.paymentgateway.application.commands.CapturePayment
@@ -24,7 +24,7 @@ class PaymentGatewayApplication {
     @Autowired
     private lateinit var commandDispacther: CommandDispatcher
     @Autowired
-    private lateinit var eventSourcingHandler: EventSourcingHandler<Payment>
+    private lateinit var eventSourcingRepository: EventSourcingRepository<Payment>
     @Autowired
     private lateinit var refundPolicy: RefundPolicy
     @Autowired
@@ -34,7 +34,7 @@ class PaymentGatewayApplication {
     fun registerCommands() {
         commandDispacther.registerHandler(
             AuthorizePayment::class.java, AuthorizePaymentHandler(
-                eventSourcingHandler,
+                eventSourcingRepository,
                 InMemoryBlacklistFraudInvestigator(
                     listOf(CreditCard.Pan("4242424242424242")),
                     listOf(Email("fraud@mail.com"))
@@ -42,10 +42,10 @@ class PaymentGatewayApplication {
             )
         )
         commandDispacther.registerHandler(
-            CapturePayment::class.java, CapturePaymentHandler(eventSourcingHandler, merchantFees)
+            CapturePayment::class.java, CapturePaymentHandler(eventSourcingRepository, merchantFees)
         )
         commandDispacther.registerHandler(
-            RefundPayment::class.java, RefundPaymentHandler(eventSourcingHandler, refundPolicy)
+            RefundPayment::class.java, RefundPaymentHandler(eventSourcingRepository, refundPolicy)
         )
     }
 }

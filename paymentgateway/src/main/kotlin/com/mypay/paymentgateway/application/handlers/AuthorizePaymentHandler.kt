@@ -2,7 +2,7 @@ package com.mypay.paymentgateway.application.handlers
 
 import com.github.michaelbull.result.*
 import com.mypay.cqrs.core.commands.CommandHandler
-import com.mypay.cqrs.core.handlers.EventSourcingHandler
+import com.mypay.cqrs.core.handlers.EventSourcingRepository
 import com.mypay.paymentgateway.application.commands.AuthorizePayment
 import com.mypay.paymentgateway.domain.payment.Payment
 import com.mypay.paymentgateway.domain.errors.DomainError
@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service
 
 @Service
 class AuthorizePaymentHandler(
-    @Autowired private val eventSourcingHandler: EventSourcingHandler<Payment>,
+    @Autowired private val eventSourcingRepository: EventSourcingRepository<Payment>,
     @Autowired private val fraudInvestigator: FraudInvestigator
 ) : CommandHandler<AuthorizePayment> {
 
@@ -26,7 +26,7 @@ class AuthorizePaymentHandler(
             command.order,
             fraudInvestigator
         )
-        eventSourcingHandler.save(aggregate)
+        eventSourcingRepository.save(aggregate)
             .onFailure { result = Err(it) }
         return result.mapBoth(
             { Ok(Unit) },

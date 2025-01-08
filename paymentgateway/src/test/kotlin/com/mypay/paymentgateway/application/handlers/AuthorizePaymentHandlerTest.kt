@@ -4,7 +4,7 @@ import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.getError
 import com.mypay.cqrs.core.aggregates.AggregateID
-import com.mypay.cqrs.core.handlers.EventSourcingHandler
+import com.mypay.cqrs.core.handlers.EventSourcingRepository
 import com.mypay.paymentgateway.application.commands.AuthorizePayment
 import com.mypay.paymentgateway.domain.errors.OptimisticConcurrencyViolation
 import com.mypay.paymentgateway.domain.payment.Money
@@ -30,11 +30,11 @@ import java.util.*
 class AuthorizePaymentHandlerTest {
     @Test
     fun `should authorize and save aggregate`() {
-        val eventSourcingHandler = mockk<EventSourcingHandler<Payment>>()
-        every { eventSourcingHandler.save(any()) } returns Ok(Unit)
+        val eventSourcingRepository = mockk<EventSourcingRepository<Payment>>()
+        every { eventSourcingRepository.save(any()) } returns Ok(Unit)
 
         val authorizationResult = AuthorizePaymentHandler(
-            eventSourcingHandler, InMemoryBlacklistFraudInvestigator(
+            eventSourcingRepository, InMemoryBlacklistFraudInvestigator(
                 emptyList(),
                 emptyList()
             )
@@ -64,16 +64,16 @@ class AuthorizePaymentHandlerTest {
 
         assertThat(authorizationResult.isOk).isTrue()
 
-        verify { eventSourcingHandler.save(any(Payment::class)) }
+        verify { eventSourcingRepository.save(any(Payment::class)) }
     }
 
     @Test
     fun `should save aggregate even when authorization fails`() {
-        val eventSourcingHandler = mockk<EventSourcingHandler<Payment>>()
-        every { eventSourcingHandler.save(any()) } returns Ok(Unit)
+        val eventSourcingRepository = mockk<EventSourcingRepository<Payment>>()
+        every { eventSourcingRepository.save(any()) } returns Ok(Unit)
 
         val authorizationResult = AuthorizePaymentHandler(
-            eventSourcingHandler,
+            eventSourcingRepository,
             InMemoryBlacklistFraudInvestigator(
                 listOf(CreditCard.Pan("4111111111111111")),
                 emptyList()
@@ -107,13 +107,13 @@ class AuthorizePaymentHandlerTest {
 
     @Test
     fun `should return an error when aggregate saving fails`() {
-        val eventSourcingHandler = mockk<EventSourcingHandler<Payment>>()
+        val eventSourcingRepository = mockk<EventSourcingRepository<Payment>>()
         val eventSourcingHandlerResult = OptimisticConcurrencyViolation
 
-        every { eventSourcingHandler.save(any()) } returns Err(eventSourcingHandlerResult)
+        every { eventSourcingRepository.save(any()) } returns Err(eventSourcingHandlerResult)
 
         val authorizationResult = AuthorizePaymentHandler(
-            eventSourcingHandler, InMemoryBlacklistFraudInvestigator(
+            eventSourcingRepository, InMemoryBlacklistFraudInvestigator(
                 emptyList(),
                 emptyList()
             )

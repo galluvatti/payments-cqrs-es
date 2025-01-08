@@ -2,7 +2,7 @@ package com.mypay.paymentgateway.adapters.persistence
 
 import com.github.michaelbull.result.*
 import com.mypay.cqrs.core.aggregates.AggregateID
-import com.mypay.cqrs.core.handlers.EventSourcingHandler
+import com.mypay.cqrs.core.handlers.EventSourcingRepository
 import com.mypay.cqrs.core.infrastructure.EventStore
 import com.mypay.paymentgateway.domain.payment.Payment
 import com.mypay.paymentgateway.domain.errors.DomainError
@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service
 @Service
 class PaymentRepository(
     @Autowired private val eventStore: EventStore
-) : EventSourcingHandler<Payment> {
+) : EventSourcingRepository<Payment> {
     private val logger = LoggerFactory.getLogger(PaymentRepository::class.java)
 
     override fun save(aggregate: Payment): Result<Unit, DomainError> {
