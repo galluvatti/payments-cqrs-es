@@ -11,10 +11,10 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 
 @Service
-class PaymentEventSourcingHandler(
+class PaymentRepository(
     @Autowired private val eventStore: EventStore
 ) : EventSourcingHandler<Payment> {
-    private val logger = LoggerFactory.getLogger(PaymentEventSourcingHandler::class.java)
+    private val logger = LoggerFactory.getLogger(PaymentRepository::class.java)
 
     override fun save(aggregate: Payment): Result<Unit, DomainError> {
         logger.info("Saving aggregate with id ${aggregate.id}")

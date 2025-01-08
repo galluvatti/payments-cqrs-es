@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test
 import java.time.LocalDateTime
 import java.util.*
 
-class PaymentEventSourcingHandlerTest {
+class PaymentRepositoryTest {
     private val authorizationAmount = Money(Currency.getInstance("EUR"), 100.0)
     private val captureAmount = Money(Currency.getInstance("EUR"), 50.0)
     private val cardHolder = CardHolder(
@@ -53,7 +53,7 @@ class PaymentEventSourcingHandlerTest {
 
         every { eventStore.saveEvents(any(), any(), any()) } returns Ok(Unit)
 
-        val result = PaymentEventSourcingHandler(eventStore).save(aggregate)
+        val result = PaymentRepository(eventStore).save(aggregate)
 
         assertThat(result.isOk).isTrue()
         assertThat(aggregate.getUncommitedChanges()).hasSize(0)
@@ -66,7 +66,7 @@ class PaymentEventSourcingHandlerTest {
 
         every { eventStore.saveEvents(any(), any(), any()) } returns Err(OptimisticConcurrencyViolation)
 
-        val result = PaymentEventSourcingHandler(eventStore).save(aggregate)
+        val result = PaymentRepository(eventStore).save(aggregate)
 
         assertThat(result.isErr).isTrue()
         assertThat(aggregate.getUncommitedChanges()).hasSize(1)
@@ -93,7 +93,7 @@ class PaymentEventSourcingHandlerTest {
                 LocalDateTime.now()
             )
         )
-        val payment = PaymentEventSourcingHandler(eventStore).getById(aggregateID)
+        val payment = PaymentRepository(eventStore).getById(aggregateID)
         assertThat(payment.version).isEqualTo(1)
         assertThat(payment.getStatus()).isEqualTo(Payment.Status.CAPTURED)
     }

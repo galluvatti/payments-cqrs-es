@@ -13,11 +13,11 @@ import org.springframework.stereotype.Service
 @Service
 class PaymentCommandDispatcher : CommandDispatcher {
     private val logger = LoggerFactory.getLogger(PaymentCommandDispatcher::class.java)
+    private val routes = HashMap<Class<out Command>, CommandHandler<out Command>>()
+
     override fun <T : Command> registerHandler(type: Class<T>, handler: CommandHandler<T>) {
         routes[type] = handler
     }
-
-    private val routes = HashMap<Class<out Command>, CommandHandler<out Command>>()
 
     override fun send(command: Command): Result<Unit, DomainError> {
         val handler = routes[command::class.java]
