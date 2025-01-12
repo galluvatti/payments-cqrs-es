@@ -29,7 +29,7 @@ class PaymentEventProducer(
     }
 }
 
-class LocalDateTimeAdapter : JsonSerializer<LocalDateTime> {
+private class LocalDateTimeAdapter : JsonSerializer<LocalDateTime> {
     private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 
     override fun serialize(

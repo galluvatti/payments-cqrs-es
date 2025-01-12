@@ -19,6 +19,6 @@ class PaymentAuthorized(
 ) :
     DomainEvent(aggregateID, version) {
     override fun toString(): String {
-        return "Authorized(merchant=$merchant, authorizationAmount=$authorizationAmount, cardHolder=$cardHolder, creditCard=$creditCard, order=$order)"
+        return "PaymentAuthorized(merchant=$merchant, authorizationAmount=$authorizationAmount, cardHolder=$cardHolder, creditCard=$creditCard, order=$order)"
     }
 }

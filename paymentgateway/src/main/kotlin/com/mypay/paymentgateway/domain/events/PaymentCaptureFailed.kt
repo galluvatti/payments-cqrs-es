@@ -7,11 +7,10 @@ import com.mypay.paymentgateway.domain.payment.Money
 class PaymentCaptureFailed(
     aggregateID: AggregateID,
     version: Int,
-    private val captureAmount: Money,
-    val failureReason: String?= null
+    private val captureAmount: Money
 ) :
     DomainEvent(aggregateID, version) {
     override fun toString(): String {
-        return "CaptureFailedEvent(captureAmount=$captureAmount, failureReason='$failureReason')"
+        return "PaymentCaptureFailed(captureAmount=$captureAmount) ${super.toString()}"
     }
 }

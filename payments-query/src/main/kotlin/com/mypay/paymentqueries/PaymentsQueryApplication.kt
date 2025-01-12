@@ -1,4 +1,4 @@
-package com.mypay.payments_query
+package com.mypay.paymentqueries
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication

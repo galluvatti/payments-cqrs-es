@@ -22,6 +22,7 @@ spring:
   kafka:
     listener:
       ack-node: MANUAL
+    topic: PaymentEvents
     consumer:
       bootstrap-servers: localhost:9092
       group-id: paymentsConsumer
