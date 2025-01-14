@@ -25,6 +25,6 @@ class PaymentCommandDispatcher : CommandDispatcher {
             logger.error("No handler found for command " + command.javaClass.name)
             return Err(CommandNotFound)
         }
-        return (handler as CommandHandler<Command>).handle(command);
+        return (handler as CommandHandler<Command>).handle(command)
     }
 }

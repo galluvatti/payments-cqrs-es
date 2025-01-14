@@ -13,7 +13,7 @@ class Payment(
     val orderDescription: String,
     @OneToMany(cascade = [CascadeType.ALL], fetch = FetchType.EAGER)
     val transactions: MutableList<Transaction> = mutableListOf()
-) {
+):com.mypay.cqrs.core.entities.Entity() {
     fun addTransaction(transaction: Transaction) {
         transactions.add(transaction)
     }
