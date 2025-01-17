@@ -1,0 +1,127 @@
+{
+	"info": {
+		"_postman_id": "06bff0aa-431b-41d2-b3b8-0102b71d8d6d",
+		"name": "Payments Query API",
+		"description": "## **Using the collection**\n\n**Step 1:** Send the sample requests and view the response and test results.\n\n**Step 2:** Replace the sample request URLs with your desired API endpoints.\n\n[<br>](https://postman.postman.co/documentation/24552533-5bead607-0197-4e1d-87d4-3160bc7631c1?entity=&branch=&version=)",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "40644541"
+	},
+	"item": [
+		{
+			"name": "Captured payments by Merchant ID",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const json = pm.response.json();\r",
+							"\r",
+							"// Validate raw body sent in the request, be it form-data or JSON\r",
+							"pm.test(\"`form` should contain the correct form data\", function () {\r",
+							"    pm.expect(json.form).to.be.an('object');\r",
+							"    pm.expect(json.form.foo1).to.eql('bar1');\r",
+							"    pm.expect(json.form.foo2).to.eql('bar2');\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"merchantID\": \"zalando\",\n  \"amount\": 100.50,\n  \"currency\": \"EUR\",\n  \"cardHolderName\": \"John\",\n  \"cardHolderSurname\": \"Doe\",\n  \"cardHolderEmail\": \"john.doe@example.com\",\n  \"cardHolderCountry\": \"US\",\n  \"cardHolderCity\": \"New York\",\n  \"cardHolderAddress\": \"123 Main Street\",\n  \"cardNumber\": \"4111111111111111\",\n  \"cardCvv\": \"123\",\n  \"cardExpiryMonth\": 12,\n  \"cardExpiryYear\": 2025,\n  \"cardType\": \"AMEX\",\n  \"orderId\": \"ORD123456789\",\n  \"orderDescription\": \"Payment for order #ORD123456789\"\n}\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/payments/captured?merchantId=booking.com",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"payments",
+						"captured"
+					],
+					"query": [
+						{
+							"key": "merchantId",
+							"value": "booking.com"
+						}
+					]
+				},
+				"description": "The tests in this request validate that the request body sent as form-data is valid."
+			},
+			"response": []
+		},
+		{
+			"name": "Authorized payments by amount",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const json = pm.response.json();\r",
+							"\r",
+							"// Validate raw body sent in the request, be it form-data or JSON\r",
+							"pm.test(\"`form` should contain the correct form data\", function () {\r",
+							"    pm.expect(json.form).to.be.an('object');\r",
+							"    pm.expect(json.form.foo1).to.eql('bar1');\r",
+							"    pm.expect(json.form.foo2).to.eql('bar2');\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"merchantID\": \"zalando\",\n  \"amount\": 100.50,\n  \"currency\": \"EUR\",\n  \"cardHolderName\": \"John\",\n  \"cardHolderSurname\": \"Doe\",\n  \"cardHolderEmail\": \"john.doe@example.com\",\n  \"cardHolderCountry\": \"US\",\n  \"cardHolderCity\": \"New York\",\n  \"cardHolderAddress\": \"123 Main Street\",\n  \"cardNumber\": \"4111111111111111\",\n  \"cardCvv\": \"123\",\n  \"cardExpiryMonth\": 12,\n  \"cardExpiryYear\": 2025,\n  \"cardType\": \"AMEX\",\n  \"orderId\": \"ORD123456789\",\n  \"orderDescription\": \"Payment for order #ORD123456789\"\n}\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/payments/authorized/with-amount/LESS_THAN?amount=50.0",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"payments",
+						"authorized",
+						"with-amount",
+						"LESS_THAN"
+					],
+					"query": [
+						{
+							"key": "amount",
+							"value": "50.0"
+						}
+					]
+				},
+				"description": "The tests in this request validate that the request body sent as form-data is valid."
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "https://postman-echo.com"
+		}
+	]
+}
